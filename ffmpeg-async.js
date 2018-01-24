@@ -1,3 +1,5 @@
+
+let FILESYSTEM = require('./filesystem-async.js');
 let FFPROBE = require('./ffprobe.js');
 var PATH = require('path');
 var CHILD_PROCESS = require('child_process');
@@ -236,18 +238,176 @@ class Codecs {
               if (char == 'S')
                 t = { char: char, string: dict[char][`${i}`].string };
               else
-                t = ({ char: char, string: dict[char].string });
+                t = { char: char, string: dict[char].string };
               types.push(t);
             }
           }
 
           let cName = cParts[1].trim();
-
           let cString = cParts.slice(2).join(' ');
-
-          items.push({ name: cName, string: cString });
+          items.push({ name: cName, string: cString, types: types });
         });
         resolve({ codecs: items, error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static decoding() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'D')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static encoding() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'E')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static audio() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'A')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static video() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'V')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static subtitle() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Subtitle codec')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static intra_frame_only() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'I')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static lossy_compression() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'L')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static lossless_compression() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Lossless compression')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
       }).catch(fatalFail);
     });
   }
@@ -307,6 +467,30 @@ class Formats {
       }).catch(fatalFail);
     });
   }
+
+  static inputs() {
+    return new Promise(resolve => {
+      Formats.all().then(results => {
+        if (results.error) {
+          resolve({ inputs: null, error: results.error });
+          return;
+        }
+        resolve({ inputs: results.formats.filter(f => f.char == 'D'), error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static outputs() {
+    return new Promise(resolve => {
+      Formats.all().then(results => {
+        if (results.error) {
+          resolve({ inputs: null, error: results.error });
+          return;
+        }
+        resolve({ inputs: results.formats.filter(f => f.char == 'E'), error: null });
+      }).catch(fatalFail);
+    });
+  }
 }
 
 //----------------------------------------
@@ -328,8 +512,12 @@ class Convert {
 // DURATION
 
 class Duration {
-  static duration(src) {
-    return FFPROBE.duration(src);
+  static duration_in_seconds(src) {
+    return FFPROBE.duration_in_seconds(src);
+  }
+
+  static duration_string(src) {
+    return FFPROBE.duration_string(src);
   }
 }
 
@@ -357,15 +545,65 @@ class Audio {
     });
   }
 
-  static merge(sources) {  // audio files only ...  (formerly "FUSE")
+  static merge(sources, dest) {  // audio files only
     return new Promise(resolve => {
-      // TO DO
+      // Create file with all video paths
+      let currDir = FILESYSTEM.Path.parent_dir(dest);
+      let tempFilepath = path.join(currDir, 'audio_input_list.txt');
+
+      let lines = [];
+      audioPaths.forEach(p => lines.push("file " + "'" + p + "'"));
+
+      FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
+        if (results.error) {
+          resolve({ success: false, error: results.error });
+          return;
+        }
+
+        // Build & run command
+        let args = `-f concat -safe 0 -i ${tempFilepath} -acodec copy ${dest}`.split(' ');
+        execute('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+
+          // clean up temp file
+          FILESYSTEM.Remove.file(tempFilepath).then(values => { }).catch(fatalFail);
+        }).catch(fatalFail);
+      }).catch(fatalFail);
     });
   }
 
-  static overlap() {
+  static overlay(sources, dest) {
     return new Promise(resolve => {
-      // TO DO
+      // Create file with all video paths
+      let currDir = FILESYSTEM.Path.parent_dir(dest);
+      let tempFilepath = path.join(currDir, 'audio_input_list.txt');
+
+      let lines = [];
+      audioPaths.forEach(p => lines.push("file " + "'" + p + "'"));
+
+      FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
+        if (results.error) {
+          resolve({ success: false, error: results.error });
+          return;
+        }
+
+        // Build & run command
+        let args = `-f concat -safe 0 -i ${tempFilepath} -filter_complex amerge -ac 2 -c:a libmp3lame -q:a 4 ${dest}`.split(' ');
+        execute('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+
+          // clean up temp file
+          FILESYSTEM.Remove.file(tempFilepath).then(values => { }).catch(fatalFail);
+        }).catch(fatalFail);
+      }).catch(fatalFail);
     });
   }
 }
