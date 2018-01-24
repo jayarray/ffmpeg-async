@@ -47,8 +47,8 @@ function execute(cmd, args) {
 
 function codec_types(src) { // returns audio, video, or both
   return new Promise(resolve => {
-    let args = `-v error -show_entries stream=codec_type -of default=nw=1 ${src}`; // If fails, put double-quotes around src
-    execute('ffprobe', args.split(' ')).then(results => {
+    let args = `-v error -show_entries stream=codec_type -of default=nw=1 ${src}`.split(' '); // If fails, put double-quotes around src
+    execute('ffprobe', args).then(results => {
       if (results.stderr) {
         resolve({ types: null, error: results.stderr });
         return;
@@ -97,9 +97,8 @@ function is_audio(src) {
 
 function duration(src) {  // in seconds
   return new Promise(resolve => {
-    let argStr = '-i ' + filepath + ' -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal';
-
-    execute('ffprobe', args.split(' ')).then(results => {
+    let args = `-i ${src} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal`.split(' ');
+    execute('ffprobe', args).then(results => {
       if (results.stderr) {
         resolve({ seconds: null, error: results.stderr });
         return;
@@ -119,8 +118,8 @@ function duration(src) {  // in seconds
 
 function info(src) {
   return new Promise(resolve => {
-    let args = `-v quiet -print_format json -show_format -show_streams ${src}`; // If fails, put double-quotes around src
-    execute('ffprobe', args.split(' ')).then(results => {
+    let args = `-v quiet -print_format json -show_format -show_streams ${src}`.split(' '); // If fails, put double-quotes around src
+    execute('ffprobe', args).then(results => {
       if (results.stderr) {
         resolve({ info: null, error: results.stderr });
         return;
