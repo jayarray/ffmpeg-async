@@ -113,6 +113,166 @@ class Encoders {
       }).catch(fatalFail);
     });
   }
+
+  static video() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'V')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static audio() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'A')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static subtitle() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Subtitle')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static frame_level_multithreading() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'F')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static slice_level_multithreading() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Slice-level multithreading')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static experimental() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'X')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static draw_horiz_band() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'B')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static direct_rendering_method_1() {
+    return new Promise(resolve => {
+      Encoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'D')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
 }
 
 //----------------------------------------
@@ -180,6 +340,166 @@ class Decoders {
           items.push({ name: cName, string: cString });
         });
         resolve({ codecs: items, error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static video() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'V')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static audio() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'A')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static subtitle() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Subtitle')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static frame_level_multithreading() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'F')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static slice_level_multithreading() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'S' && type.string == 'Slice-level multithreading')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static experimental() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'X')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static draw_horiz_band() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'B')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static direct_rendering_method_1() {
+    return new Promise(resolve => {
+      Decoders.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          codec.types.forEach(type => {
+            if (type.char == 'D')
+              ret.push(codec);
+          });
+        });
+        resolve({ codecs: ret, error: results.error });
       }).catch(fatalFail);
     });
   }
@@ -286,6 +606,25 @@ class Codecs {
             if (type.char == 'E')
               ret.push(codec);
           });
+        });
+        resolve({ codecs: ret, error: results.error });
+      }).catch(fatalFail);
+    });
+  }
+
+  static encoding_decoding() {
+    return new Promise(resolve => {
+      Codecs.all().then(results => {
+        if (results.error) {
+          resolve({ codecs: null, error: results.error });
+          return;
+        }
+
+        let ret = [];
+        results.codecs.forEach(codec => {
+          if (codec.types.E != undefined && codec.types.D != undefined) {
+            ret.push(codec);
+          }
         });
         resolve({ codecs: ret, error: results.error });
       }).catch(fatalFail);
@@ -512,15 +851,14 @@ class Convert {
 // DURATION
 
 class Duration {
-  static duration_in_seconds(src) {
+  static seconds(src) {
     return FFPROBE.duration_in_seconds(src);
   }
 
-  static duration_string(src) {
+  static string(src) {
     return FFPROBE.duration_string(src);
   }
 }
-
 
 //----------------------------------------
 // AUDIO
@@ -528,7 +866,13 @@ class Duration {
 class Audio {
   static supported_formats() {
     return new Promise(resolve => {
-      // TO DO
+      Codecs.audio().then(results => {
+        if (results.error) {
+          resolve({ formats: null, error: results.error });
+          return;
+        }
+        resolve({ formats: results.formats, error: null });
+      }).catch(fatalFail);
     });
   }
 
@@ -614,7 +958,13 @@ class Audio {
 class Video {
   static supported_formats() {
     return new Promise(resolve => {
-      // TO DO
+      Codecs.video().then(results => {
+        if (results.error) {
+          resolve({ formats: null, error: results.error });
+          return;
+        }
+        resolve({ formats: results.formats, error: null });
+      }).catch(fatalFail);
     });
   }
 
