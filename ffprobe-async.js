@@ -95,7 +95,7 @@ function is_audio(src) {
   });
 }
 
-function duration(src) {  // in seconds
+function duration_string(src) {
   return new Promise(resolve => {
     let args = `-i ${src} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal`.split(' ');
     execute('ffprobe', args).then(results => {
@@ -103,15 +103,29 @@ function duration(src) {  // in seconds
         resolve({ seconds: null, error: results.stderr });
         return;
       }
+      resolve({ string: results.stdout.trim(), error: null });
+    }).catch(fatalFail);
+  });
+}
 
-      if (results.stdout.trim()) {
+function duration_in_seconds(src) {  // in seconds
+  return new Promise(resolve => {
+    duration_string(src).then(results => {
+      if (results.error) {
+        resolve({ seconds: null, error: results.error });
+        return;
+      }
+
+      if (results.string.trim() && results.string.split(':').length == 3) {
         let parts = results.stdout.trim().split(':');
         let hours = parseInt(parts[0]);
         let minutes = parseInt(parts[1]);
         let secondsParts = parts[2].split('.');
         let seconds = parseInt(secondsParts[0]);
         resolve({ seconds: (hours * 3600) + (minutes * 60) + (seconds), error: null });
+        return;
       }
+      resolve({ seconds: null, error: null }); // No string returned
     }).catch(fatalFail);
   });
 }
@@ -124,7 +138,7 @@ function info(src) {
         resolve({ info: null, error: results.stderr });
         return;
       }
-      resolve({ info: JSON.parse(results.stdout), error: null });
+      resolve({ info: JSON.parse(results.stdout), error: null }); // returns { "streams": {...}, "formats": {...} }
     }).catch(fatalFail);
   });
 }
@@ -136,5 +150,6 @@ function info(src) {
 exports.codec_types = codec_types;
 exports.is_video = is_video;
 exports.is_audio = is_audio;
-exports.duration = duration;
+exports.duration_string = duration_string;
+exports.duration_in_seconds = duration_in_seconds;
 exports.info = info;
