@@ -120,7 +120,7 @@ function duration_time_units(src) {
         let parts = results.stdout.trim().split(':');
         let hours = parseFloat(parts[0]);
         let minutes = parseFloat(parts[1]);
-        let seconds = parseFloat(parts[2]);
+        let seconds = parseFloat(parts[2].slice(0, 5).join(''));
         resolve({
           units: { hours: hours, minutes: minutes, seconds: seconds },  // float, float, float
           error: null
@@ -144,7 +144,7 @@ function duration_in_seconds(src) {  // in seconds
         let parts = results.stdout.trim().split(':');
         let hours = parseFloat(parts[0]);
         let minutes = parseFloat(parts[1]);
-        let seconds = parseFloat(parts[2]);
+        let seconds = parseFloat(parts[2].slice(0, 5).join(''));
         resolve({ seconds: (hours * 3600) + (minutes * 60) + (seconds), error: null });  // float
         return;
       }
