@@ -45,7 +45,6 @@ function execute(cmd, args) {
 
 //----------------------------------------
 // ENCODERS
-
 class Encoders {
   static all() {
     return new Promise(resolve => {
@@ -116,7 +115,6 @@ class Encoders {
 
 //----------------------------------------
 // DECODERS
-
 class Decoders {
   static all() {
     return new Promise(resolve => {
@@ -187,7 +185,6 @@ class Decoders {
 
 //----------------------------------------
 // CODECS
-
 class Codecs {
   static all() {
     return new Promise(resolve => {
@@ -258,7 +255,6 @@ class Codecs {
 
 //------------------------------------------
 // FORMATS
-
 class Formats {
   static all() {
     return new Promise(resolve => {
@@ -314,50 +310,63 @@ class Formats {
 }
 
 //----------------------------------------
+// CONVERT
+class Convert {
+  static convert(src, dest) {
+    let args = `-i ${src} ${dest}`.split(' ');
+    execute('ffmpeg', args).then(result => {
+      if (results.stderr) {
+        resolve({ success: false, error: results.stderr });
+        return;
+      }
+      resolve({ success: true, error: null });
+    }).catch(fatalFail);
+  }
+}
+
+//----------------------------------------
+// DURATION
+
+class Duration {
+  static duration(src) {
+    return FFPROBE.duration(src);
+  }
+}
+
+
+//----------------------------------------
 // AUDIO
 
 class Audio {
   static supported_formats() {
     return new Promise(resolve => {
-
+      // TO DO
     });
   }
 
-  static duration(src) {  // in seconds
-    let cmd = 'ffprobe';
-    let argStr = '-i ' + filepath + ' -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal';
-    let args = argsStr.split(' ');
-    let output = execute(cmd, args);
-
-    if (output.stdout.trim()) {
-      let parts = out.stdout.trim().split(':');
-
-      let hours = parseInt(parts[0]);
-      let minutes = parseInt(parts[1]);
-
-      let secondsParts = parts[2].split('.');
-      let seconds = parseInt(secondsParts[0]);
-      //let microseconds = parseInt(secondsParts[1]);
-
-      return (hours * 3600) + (minutes * 60) + (seconds);
-    }
-    return null;
-  }
-
-  static convert(src, dest) {
-    // TO DO
-  }
-
   static trim(src, start, end, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${src} -ss ${start} -to ${end} -c copy ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
   }
 
-  static merge() {  // rename to "MERGE"
-    // TO DO
+  static merge(sources) {  // audio files only ...  (formerly "FUSE")
+    return new Promise(resolve => {
+      // TO DO
+    });
   }
 
   static overlap() {
-    // TO DO
+    return new Promise(resolve => {
+      // TO DO
+    });
   }
 }
 
@@ -366,23 +375,34 @@ class Audio {
 
 class Video {
   static supported_formats() {
-    // TO DO
-  }
-
-  static duration(src) {  // in seconds
-    // TO DO
+    return new Promise(resolve => {
+      // TO DO
+    });
   }
 
   static estimated_frames(src, fps) {  // fps = frames per second
-    // TO DO
-  }
-
-  static convert(src, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      Duration.duration(src).then(results => {
+        if (results.error) {
+          resolve({ count: null, error: results.error });
+          return;
+        }
+        resolve({ count: results.seconds * fps, error: null });
+      }).catch(fatalFail);
+    });
   }
 
   static trim(src, start, end, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-ss ${start} -i ${src} -to ${end} -c copy ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
   }
 
   static merge() {  // rename to "MERGE"
@@ -402,32 +422,89 @@ class Video {
   }
 
   static extract_audio(src, dest) {
-    // TO DO
+    return Convert.convert(src, dest);
   }
 
   static extract_video(src, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${src} -c copy -an ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
   }
 
   static extract_images(src, destFormatStr, frameStartNumber, fps) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${src}`;
+      if (frameStartNumber)
+        args += ` -start_number ${frameStartNumber}`;
+      args += ` -vf fps=${fps} ${dest}`;
+      args = args.split(' ');
+
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
   }
 
   static change_speed(src, speed, avoidDroppingFrames, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      // SLOW: speed > 1
+      // FAST: 0 < speed <= 1
+
+      let args = `-i ${src}`;
+
+      let speedInverse = Math.inv(speed);
+      speedInverse = parseInt(speedInverse);
+
+      if (avoidDroppingFrames) {
+        args += ` -r ${speedInverse}`;
+      }
+      args += ` -filter:v "setpts=${speedInverse}" ${dest}`;
+      args = args.split(' ');
+
+      execute('ffmpeg', args).then(results => {
+        if (result.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
+
   }
 
   static smooth_out(src, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${src} -filter "minterpolate='mi_mode=mci:mc_mode=aobmc:vsbmc=1:fps=120'" ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
   }
 }
 
 //-----------------------------------
 // EXPORTS
 
+exports.Encoders = Encoders;
+exports.Decoders = Decoders;
 exports.Codecs = Codecs;
 exports.Formats = Formats;
-exports.Info = Info;
+exports.Convert = Convert;
 exports.Audio = Audio;
 exports.Video = Video;
 
