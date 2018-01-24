@@ -108,6 +108,30 @@ function duration_string(src) {
   });
 }
 
+function duration_time_units(src) {
+  return new Promise(resolve => {
+    duration_string(src).then(results => {
+      if (results.error) {
+        resolve({ units: null, error: results.error });
+        return;
+      }
+
+      if (results.string.trim() && results.string.split(':').length == 3) {
+        let parts = results.stdout.trim().split(':');
+        let hours = parseFloat(parts[0]);
+        let minutes = parseFloat(parts[1]);
+        let seconds = parseFloat(parts[2]);
+        resolve({
+          units: { hours: hours, minutes: minutes, seconds: seconds },  // float, float, float
+          error: null
+        });
+        return;
+      }
+      resolve({ units: null, error: null }); // No string returned
+    }).catch(fatalFail);
+  });
+}
+
 function duration_in_seconds(src) {  // in seconds
   return new Promise(resolve => {
     duration_string(src).then(results => {
@@ -118,11 +142,10 @@ function duration_in_seconds(src) {  // in seconds
 
       if (results.string.trim() && results.string.split(':').length == 3) {
         let parts = results.stdout.trim().split(':');
-        let hours = parseInt(parts[0]);
-        let minutes = parseInt(parts[1]);
-        let secondsParts = parts[2].split('.');
-        let seconds = parseInt(secondsParts[0]);
-        resolve({ seconds: (hours * 3600) + (minutes * 60) + (seconds), error: null });
+        let hours = parseFloat(parts[0]);
+        let minutes = parseFloat(parts[1]);
+        let seconds = parseFloat(parts[2]);
+        resolve({ seconds: (hours * 3600) + (minutes * 60) + (seconds), error: null });  // float
         return;
       }
       resolve({ seconds: null, error: null }); // No string returned
@@ -151,5 +174,6 @@ exports.codec_types = codec_types;
 exports.is_video = is_video;
 exports.is_audio = is_audio;
 exports.duration_string = duration_string;
+exports.duration_time_units = duration_time_units;
 exports.duration_in_seconds = duration_in_seconds;
 exports.info = info;
