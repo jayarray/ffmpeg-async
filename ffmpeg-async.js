@@ -858,11 +858,14 @@ class Duration {
   static string(src) {
     return FFPROBE.duration_string(src);
   }
+
+  static units(src) {
+    return FFPROBE.duration_time_units(src);
+  }
 }
 
 //----------------------------------------
 // AUDIO
-
 class Audio {
   static supported_formats() {
     return new Promise(resolve => {
@@ -889,14 +892,14 @@ class Audio {
     });
   }
 
-  static merge(sources, dest) {  // audio files only
+  static concat(sources, dest) {  // audio files only
     return new Promise(resolve => {
       // Create file with all video paths
       let currDir = FILESYSTEM.Path.parent_dir(dest);
       let tempFilepath = path.join(currDir, 'audio_input_list.txt');
 
       let lines = [];
-      audioPaths.forEach(p => lines.push("file " + "'" + p + "'"));
+      sources.forEach(s => lines.push(`file '${s}'`));
 
       FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
         if (results.error) {
@@ -927,7 +930,7 @@ class Audio {
       let tempFilepath = path.join(currDir, 'audio_input_list.txt');
 
       let lines = [];
-      audioPaths.forEach(p => lines.push("file " + "'" + p + "'"));
+      sources.forEach(s => lines.push(`file '${s}'`));
 
       FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
         if (results.error) {
@@ -947,6 +950,27 @@ class Audio {
           // clean up temp file
           FILESYSTEM.Remove.file(tempFilepath).then(values => { }).catch(fatalFail);
         }).catch(fatalFail);
+      }).catch(fatalFail);
+    });
+  }
+
+  static change_speed(src, speed) {  // 0.5 (slower) < speed < 2.0 (faster)
+    return new Promise(resolve => {
+      let boundSpeed = 0;
+      if (speed < 0.5)
+        boundSpeed = 0.5;
+      else if (speed > 2.0)
+        boundSpeed = 2.0;
+      else
+        boundSpeed = speed;
+
+      let args = `-i ${src} -filter:a "atempo=${boundSpeed}" -vn ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
       }).catch(fatalFail);
     });
   }
@@ -970,12 +994,12 @@ class Video {
 
   static estimated_frames(src, fps) {  // fps = frames per second
     return new Promise(resolve => {
-      Duration.duration(src).then(results => {
+      Duration.seconds(src).then(results => {
         if (results.error) {
           resolve({ count: null, error: results.error });
           return;
         }
-        resolve({ count: results.seconds * fps, error: null });
+        resolve({ count: Math.floor(result.seconds * fps), error: null });
       }).catch(fatalFail);
     });
   }
@@ -993,20 +1017,195 @@ class Video {
     });
   }
 
-  static merge() {  // rename to "MERGE"
-    // TO DO
+  static concat(sources, dest) { // videos only! no re-encoding
+    return new Promise(resolve => {
+      let args = ['-i', `'concat:${sources.join('|')}'`, '-codec', 'copy', dest];
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static concat_no_audio(sources, dest) {  // will re-encode
+    return new Promise(resolve => {
+      let args = [];
+
+      // Source args
+      sources.forEach(source => {
+        args.push('-i');
+        args.push(source);
+      });
+
+      // Filter args (audio/ video stream args)
+      args.push('-filter_complex');
+
+      let filterStr = "'";
+      for (let i = 0; i < sources.length; ++i) {
+        if (i > 0)
+          filterStr += ' ';
+        filterStr += `[${i}:v:0]`;
+      }
+
+      // Concat & map string
+      filterStr += ` concat=n=${sources.length}:v=1 [v]'`;
+      args.push(filterStr);
+      args.push('-map', "'[v]'", dest);
+
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static concat_reencode(sources, dest) {
+    return new Promise(resolve => {
+      let args = [];
+
+      // Source args
+      sources.forEach(source => {
+        args.push('-i');
+        args.push(source);
+      });
+
+      // Filter args (audio/ video stream args)
+      args.push('-filter_complex');
+
+      let filterStr = "'";
+      for (let i = 0; i < sources.length; ++i) {
+        if (i > 0)
+          filterStr += ' ';
+
+        let audioFilter = `[${i}:a:0]`;
+        let videoFilter = `[${i}:v:0]`;
+        filterStr += `${audioFilter} ${videoFilter}`;
+      }
+
+      // Concat & map string
+      filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]'`;
+      args.push(filterStr);
+      args.push('-map', "'[v]'", '-map', "'[a]'", dest);
+
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail);
+    });
+  }
+
+  static concat_demuxer(sources, dest) {
+    return new Promise(resolve => {
+      // Create file with all video paths
+      let currDir = FILESYSTEM.Path.parent_dir(dest);
+      let tempFilepath = path.join(currDir, 'video_input_list.txt');
+
+      let lines = [];
+      sources.forEach(s => lines.push(`file '${s}'`));
+
+      FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
+        if (results.error) {
+          resolve({ success: false, error: results.error });
+          return;
+        }
+
+        // Build & run command
+        let args = `-f concat -i ${tempFilepath} -c copy ${dest}`.split(' ');
+        execute('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+
+          // clean up temp file
+          FILESYSTEM.Remove.file(tempFilepath).then(values => { }).catch(fatalFail);
+        }).catch(fatalFail);
+      }).catch(fatalFail);
+    });
   }
 
   static add_audio(videoSrc, audioSrc, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${videoSrc} -i ${audioSrc} -codec copy -shortest ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail)
+    });
   }
 
   static replace_audio(videoSrc, audioSrc, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      let args = `-i ${videoSrc} -i ${audioSrc} -c:v copy -map 0:v:0 -map 1:a:0 -shortest ${dest}`.split(' ');
+      execute('ffmpeg', args).then(results => {
+        if (results.stderr) {
+          resolve({ success: false, error: results.stderr });
+          return;
+        }
+        resolve({ success: true, error: null });
+      }).catch(fatalFail)
+    });
   }
 
   static create(fps, imgSeqFormatStr, audioPaths, dest) {
-    // TO DO
+    return new Promise(resolve => {
+      if (audioPaths.length == 1) {
+        let args = `-r ${fps} -i ${imgSeqFormatStr} -i ${audioPaths[0]} -vcodec libx264 -shortest -y ${dest}`.split(' ');
+        execute('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+        }).catch(fatalFail);
+      }
+      else if (audioPaths.length > 1) {
+        let currDir = FILESYSTEM.Path.parent_dir(dest);
+        let tempFilepath = PATH.join(currDir, 'video_input_list.txt');
+
+        let lines = [];
+        audioPaths.forEach(path => lines.push(`file '${path}'`));
+
+        FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+
+          let args = `-r ${fps} -i ${imgSeqFormatStr} -f concat -safe 0 -i ${tempFilepath} -vcodec libx264 -r ${fps} -shortest -y ${dest}`.split(' ');
+          execute('ffmpeg', args).then(results => {
+            if (results.stderr) {
+              resolve({ success: false, error: results.stderr });
+              return;
+            }
+            resolve({ success: true, error: null });
+          }).catch(fatalFail);
+        }).catch(fatalFail);
+      }
+      else {
+        let args = `-r ${fps} -i ${imgSeqFormatStr} -vcodec libx264 -r ${fps} -y ${dest}`.split(' ');
+        execute('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            resolve({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+        }).catch(fatalFail);
+      }
+    });
   }
 
   static extract_audio(src, dest) {
@@ -1044,20 +1243,16 @@ class Video {
     });
   }
 
-  static change_speed(src, speed, avoidDroppingFrames, dest) {
+  static change_speed(src, speed, avoidDroppingFrames, dest) { 
     return new Promise(resolve => {
       // SLOW: speed > 1
       // FAST: 0 < speed <= 1
 
       let args = `-i ${src}`;
-
-      let speedInverse = Math.inv(speed);
-      speedInverse = parseInt(speedInverse);
-
       if (avoidDroppingFrames) {
         args += ` -r ${speedInverse}`;
       }
-      args += ` -filter:v "setpts=${speedInverse}" ${dest}`;
+      args += ` -filter:v "setpts=${speed}*PTS" ${dest}`;
       args = args.split(' ');
 
       execute('ffmpeg', args).then(results => {
