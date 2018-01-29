@@ -14,10 +14,10 @@ function fatalFail(error) {
 // ENCODERS
 class Encoders {
   static all() {
-    return new Promise(resolve => {
-      execute('ffmpeg', ['-encoders']).then(results => {
+    return new Promise((resolve, reject) => {
+      FILESYSTEM.Execute.local('ffmpeg', ['-encoders']).then(results => {
         if (results.stderr && !results.stderr.startsWith('ffmpeg')) {
-          resolve({ codecs: null, error: results.stderr });
+          reject({ codecs: null, error: results.stderr });
           return;
         }
 
@@ -80,10 +80,10 @@ class Encoders {
   }
 
   static video() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -100,10 +100,10 @@ class Encoders {
   }
 
   static audio() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -120,10 +120,10 @@ class Encoders {
   }
 
   static subtitle() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -140,10 +140,10 @@ class Encoders {
   }
 
   static frame_level_multithreading() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -160,10 +160,10 @@ class Encoders {
   }
 
   static slice_level_multithreading() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -180,10 +180,10 @@ class Encoders {
   }
 
   static experimental() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -200,10 +200,10 @@ class Encoders {
   }
 
   static draw_horiz_band() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -220,10 +220,10 @@ class Encoders {
   }
 
   static direct_rendering_method_1() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Encoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -244,10 +244,10 @@ class Encoders {
 // DECODERS
 class Decoders {
   static all() {
-    return new Promise(resolve => {
-      execute('ffmpeg', ['-decoders']).then(results => {
+    return new Promise((resolve, reject) => {
+      FILESYSTEM.Execute.local('ffmpeg', ['-decoders']).then(results => {
         if (results.stderr && !results.stderr.startsWith('ffmpeg')) {
-          resolve({ codecs: null, error: results.stderr });
+          reject({ codecs: null, error: results.stderr });
           return;
         }
 
@@ -310,10 +310,10 @@ class Decoders {
   }
 
   static video() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -330,10 +330,10 @@ class Decoders {
   }
 
   static audio() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -350,10 +350,10 @@ class Decoders {
   }
 
   static subtitle() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -370,10 +370,10 @@ class Decoders {
   }
 
   static frame_level_multithreading() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -390,10 +390,10 @@ class Decoders {
   }
 
   static slice_level_multithreading() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -410,10 +410,10 @@ class Decoders {
   }
 
   static experimental() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -430,10 +430,10 @@ class Decoders {
   }
 
   static draw_horiz_band() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -450,10 +450,10 @@ class Decoders {
   }
 
   static direct_rendering_method_1() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Decoders.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -474,10 +474,10 @@ class Decoders {
 // CODECS
 class Codecs {
   static all() {
-    return new Promise(resolve => {
-      execute('ffmpeg', ['-codecs']).then(results => {
+    return new Promise((resolve, reject) => {
+      FILESYSTEM.Execute.local('ffmpeg', ['-codecs']).then(results => {
         if (results.stderr && !results.stderr.startsWith('ffmpeg')) {
-          resolve({ codecs: null, error: results.stderr });
+          reject({ codecs: null, error: results.stderr });
           return;
         }
 
@@ -538,10 +538,10 @@ class Codecs {
   }
 
   static decoding() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -558,10 +558,10 @@ class Codecs {
   }
 
   static encoding() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -578,10 +578,10 @@ class Codecs {
   }
 
   static encoding_decoding() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -597,10 +597,10 @@ class Codecs {
   }
 
   static audio() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -617,10 +617,10 @@ class Codecs {
   }
 
   static video() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -637,10 +637,10 @@ class Codecs {
   }
 
   static subtitle() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -657,10 +657,10 @@ class Codecs {
   }
 
   static intra_frame_only() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -677,10 +677,10 @@ class Codecs {
   }
 
   static lossy_compression() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -697,10 +697,10 @@ class Codecs {
   }
 
   static lossless_compression() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.all().then(results => {
         if (results.error) {
-          resolve({ codecs: null, error: results.error });
+          reject({ codecs: null, error: results.error });
           return;
         }
 
@@ -721,10 +721,10 @@ class Codecs {
 // FORMATS
 class Formats {
   static all() {
-    return new Promise(resolve => {
-      execute('ffmpeg', ['-formats']).then(results => {
+    return new Promise((resolve, reject) => {
+      FILESYSTEM.Execute.local('ffmpeg', ['-formats']).then(results => {
         if (results.stderr && !results.stderr.startsWith('ffmpeg')) {
-          resolve({ formats: null, error: results.stderr });
+          reject({ formats: null, error: results.stderr });
           return;
         }
 
@@ -773,10 +773,10 @@ class Formats {
   }
 
   static inputs() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Formats.all().then(results => {
         if (results.error) {
-          resolve({ inputs: null, error: results.error });
+          reject({ inputs: null, error: results.error });
           return;
         }
         resolve({ inputs: results.formats.filter(f => f.char == 'D'), error: null });
@@ -785,10 +785,10 @@ class Formats {
   }
 
   static outputs() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Formats.all().then(results => {
         if (results.error) {
-          resolve({ inputs: null, error: results.error });
+          reject({ inputs: null, error: results.error });
           return;
         }
         resolve({ inputs: results.formats.filter(f => f.char == 'E'), error: null });
@@ -801,14 +801,41 @@ class Formats {
 // CONVERT
 class Convert {
   static convert(src, dest) {
-    let args = `-i ${src} ${dest}`.split(' ');
-    execute('ffmpeg', args).then(result => {
-      if (results.stderr) {
-        resolve({ success: false, error: results.stderr });
+    return new Promise((resolve, reject) => {
+      let error = FILESYSTEM.Path.error(src);
+      if (error) {
+        reject({ success: false, error: error });
         return;
       }
-      resolve({ success: true, error: null });
-    }).catch(fatalFail);
+
+      error = FILESYSTEM.Path.error(dest);
+      if (error) {
+        reject({ success: false, error: error });
+        return;
+      }
+
+      let sTrimmed = src.trim();
+      FILESYSTEM.Path.exists(sTrimmed).then(results => {
+        if (results.error) {
+          reject({ success: false, error: results.error });
+          return;
+        }
+
+        if (!results.exists) {
+          reject({ success: false, error: `Path does not exist: ${sTrimmed}` });
+          return;
+        }
+
+        let args = ['-i', sTrimmed, dest.trim()];
+        FILESYSTEM.Execute.local('ffmpeg', args).then(values => {
+          if (values.stderr) {
+            reject({ success: false, error: values.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+        }).catch(fatalFail);
+      }).catch(fatalFail);
+    });
   }
 }
 
@@ -833,10 +860,10 @@ class Duration {
 // AUDIO
 class Audio {
   static supported_formats() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.audio().then(results => {
         if (results.error) {
-          resolve({ formats: null, error: results.error });
+          reject({ formats: null, error: results.error });
           return;
         }
         resolve({ formats: results.formats, error: null });
@@ -845,20 +872,35 @@ class Audio {
   }
 
   static trim(src, start, end, dest) {
-    return new Promise(resolve => {
-      let args = `-i ${src} -ss ${start} -to ${end} -c copy ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
-        if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
-          return;
-        }
-        resolve({ success: true, error: null });
+    return new Promise((resolve, reject) => {
+      let error = FILESYSTEM.Path.error(src);
+      if (error) {
+        reject({ success: false, error: error });
+        return;
+      }
+
+      error = FILESYSTEM.Path.error(dest);
+      if (error) {
+        reject({ success: false, error: error });
+        return;
+      }
+
+      let sTrimmed = src.trim();
+      FILESYSTEM.Path.exists(sTrimmed).then(results => {
+        let args = ['-i', sTrimmed, '-ss', start, '-to', end, '-c', 'copy', dest];
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
+          if (results.stderr) {
+            reject({ success: false, error: results.stderr });
+            return;
+          }
+          resolve({ success: true, error: null });
+        }).catch(fatalFail);
       }).catch(fatalFail);
     });
   }
 
   static concat(sources, dest) {  // audio files only
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       // Create file with all video paths
       let currDir = FILESYSTEM.Path.parent_dir(dest);
       let tempFilepath = path.join(currDir, 'audio_input_list.txt');
@@ -868,15 +910,15 @@ class Audio {
 
       FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
         if (results.error) {
-          resolve({ success: false, error: results.error });
+          reject({ success: false, error: results.error });
           return;
         }
 
         // Build & run command
         let args = `-f concat -safe 0 -i ${tempFilepath} -acodec copy ${dest}`.split(' ');
-        execute('ffmpeg', args).then(results => {
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
           if (results.stderr) {
-            resolve({ success: false, error: results.stderr });
+            reject({ success: false, error: results.stderr });
             return;
           }
           resolve({ success: true, error: null });
@@ -889,7 +931,7 @@ class Audio {
   }
 
   static overlay(sources, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       // Create file with all video paths
       let currDir = FILESYSTEM.Path.parent_dir(dest);
       let tempFilepath = path.join(currDir, 'audio_input_list.txt');
@@ -899,15 +941,15 @@ class Audio {
 
       FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
         if (results.error) {
-          resolve({ success: false, error: results.error });
+          reject({ success: false, error: results.error });
           return;
         }
 
         // Build & run command
         let args = `-f concat -safe 0 -i ${tempFilepath} -filter_complex amerge -ac 2 -c:a libmp3lame -q:a 4 ${dest}`.split(' ');
-        execute('ffmpeg', args).then(results => {
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
           if (results.stderr) {
-            resolve({ success: false, error: results.stderr });
+            reject({ success: false, error: results.stderr });
             return;
           }
           resolve({ success: true, error: null });
@@ -920,7 +962,7 @@ class Audio {
   }
 
   static change_speed(src, speed) {  // 0.5 (slower) < speed < 2.0 (faster)
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let boundSpeed = 0;
       if (speed < 0.5)
         boundSpeed = 0.5;
@@ -930,9 +972,9 @@ class Audio {
         boundSpeed = speed;
 
       let args = `-i ${src} -filter:a "atempo=${boundSpeed}" -vn ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -946,10 +988,10 @@ class Audio {
 
 class Video {
   static supported_formats() {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Codecs.video().then(results => {
         if (results.error) {
-          resolve({ formats: null, error: results.error });
+          reject({ formats: null, error: results.error });
           return;
         }
         resolve({ formats: results.formats, error: null });
@@ -958,10 +1000,10 @@ class Video {
   }
 
   static estimated_frames(src, fps) {  // fps = frames per second
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       Duration.seconds(src).then(results => {
         if (results.error) {
-          resolve({ count: null, error: results.error });
+          reject({ count: null, error: results.error });
           return;
         }
         resolve({ count: Math.floor(result.seconds * fps), error: null });
@@ -970,11 +1012,11 @@ class Video {
   }
 
   static trim(src, start, end, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-ss ${start} -i ${src} -to ${end} -c copy ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -983,11 +1025,11 @@ class Video {
   }
 
   static concat(sources, dest) { // videos only! no re-encoding
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = ['-i', `'concat:${sources.join('|')}'`, '-codec', 'copy', dest];
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -996,7 +1038,7 @@ class Video {
   }
 
   static concat_no_audio(sources, dest) {  // will re-encode
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = [];
 
       // Source args
@@ -1020,9 +1062,9 @@ class Video {
       args.push(filterStr);
       args.push('-map', "'[v]'", dest);
 
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1031,7 +1073,7 @@ class Video {
   }
 
   static concat_reencode(sources, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = [];
 
       // Source args
@@ -1058,9 +1100,9 @@ class Video {
       args.push(filterStr);
       args.push('-map', "'[v]'", '-map', "'[a]'", dest);
 
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1069,7 +1111,7 @@ class Video {
   }
 
   static concat_demuxer(sources, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       // Create file with all video paths
       let currDir = FILESYSTEM.Path.parent_dir(dest);
       let tempFilepath = path.join(currDir, 'video_input_list.txt');
@@ -1079,15 +1121,15 @@ class Video {
 
       FILESYSTEM.File.create(tempFilepath, lines.join('\n')).then(results => {
         if (results.error) {
-          resolve({ success: false, error: results.error });
+          reject({ success: false, error: results.error });
           return;
         }
 
         // Build & run command
         let args = `-f concat -i ${tempFilepath} -c copy ${dest}`.split(' ');
-        execute('ffmpeg', args).then(results => {
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
           if (results.stderr) {
-            resolve({ success: false, error: results.stderr });
+            reject({ success: false, error: results.stderr });
             return;
           }
           resolve({ success: true, error: null });
@@ -1100,11 +1142,11 @@ class Video {
   }
 
   static add_audio(videoSrc, audioSrc, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-i ${videoSrc} -i ${audioSrc} -codec copy -shortest ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1113,11 +1155,11 @@ class Video {
   }
 
   static replace_audio(videoSrc, audioSrc, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-i ${videoSrc} -i ${audioSrc} -c:v copy -map 0:v:0 -map 1:a:0 -shortest ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1126,12 +1168,12 @@ class Video {
   }
 
   static create(fps, imgSeqFormatStr, audioPaths, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       if (audioPaths.length == 1) {
         let args = `-r ${fps} -i ${imgSeqFormatStr} -i ${audioPaths[0]} -vcodec libx264 -shortest -y ${dest}`.split(' ');
-        execute('ffmpeg', args).then(results => {
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
           if (results.stderr) {
-            resolve({ success: false, error: results.stderr });
+            reject({ success: false, error: results.stderr });
             return;
           }
           resolve({ success: true, error: null });
@@ -1151,9 +1193,9 @@ class Video {
           }
 
           let args = `-r ${fps} -i ${imgSeqFormatStr} -f concat -safe 0 -i ${tempFilepath} -vcodec libx264 -r ${fps} -shortest -y ${dest}`.split(' ');
-          execute('ffmpeg', args).then(results => {
+          FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
             if (results.stderr) {
-              resolve({ success: false, error: results.stderr });
+              reject({ success: false, error: results.stderr });
               return;
             }
             resolve({ success: true, error: null });
@@ -1162,9 +1204,9 @@ class Video {
       }
       else {
         let args = `-r ${fps} -i ${imgSeqFormatStr} -vcodec libx264 -r ${fps} -y ${dest}`.split(' ');
-        execute('ffmpeg', args).then(results => {
+        FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
           if (results.stderr) {
-            resolve({ success: false, error: results.stderr });
+            reject({ success: false, error: results.stderr });
             return;
           }
           resolve({ success: true, error: null });
@@ -1178,11 +1220,11 @@ class Video {
   }
 
   static extract_video(src, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-i ${src} -c copy -an ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1191,16 +1233,16 @@ class Video {
   }
 
   static extract_images(src, destFormatStr, frameStartNumber, fps) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-i ${src}`;
       if (frameStartNumber)
         args += ` -start_number ${frameStartNumber}`;
       args += ` -vf fps=${fps} ${dest}`;
       args = args.split(' ');
 
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1208,8 +1250,8 @@ class Video {
     });
   }
 
-  static change_speed(src, speed, avoidDroppingFrames, dest) { 
-    return new Promise(resolve => {
+  static change_speed(src, speed, avoidDroppingFrames, dest) {
+    return new Promise((resolve, reject) => {
       // SLOW: speed > 1
       // FAST: 0 < speed <= 1
 
@@ -1220,9 +1262,9 @@ class Video {
       args += ` -filter:v "setpts=${speed}*PTS" ${dest}`;
       args = args.split(' ');
 
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (result.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
@@ -1232,11 +1274,11 @@ class Video {
   }
 
   static smooth_out(src, dest) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       let args = `-i ${src} -filter "minterpolate='mi_mode=mci:mc_mode=aobmc:vsbmc=1:fps=120'" ${dest}`.split(' ');
-      execute('ffmpeg', args).then(results => {
+      FILESYSTEM.Execute.local('ffmpeg', args).then(results => {
         if (results.stderr) {
-          resolve({ success: false, error: results.stderr });
+          reject({ success: false, error: results.stderr });
           return;
         }
         resolve({ success: true, error: null });
