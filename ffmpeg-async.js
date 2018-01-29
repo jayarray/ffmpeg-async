@@ -1,8 +1,6 @@
 
-let FILESYSTEM = require('./filesystem-async.js');
-let FFPROBE = require('./ffprobe.js');
-var PATH = require('path');
-var CHILD_PROCESS = require('child_process');
+let FILESYSTEM = require('filesystem-async.js');
+let FFPROBE = require('ffprobe-async.js');
 
 //-----------------------------------
 // ERROR CATCHING
@@ -10,39 +8,6 @@ var CHILD_PROCESS = require('child_process');
 function fatalFail(error) {
   console.log(error);
   process.exit(-1);
-}
-
-//-----------------------------------
-// SAVING DATA (to string)
-
-class SavedData {
-  constructor(thing) {
-    this.value = '';
-    thing.on('data', this.callback_.bind(this));
-  }
-
-  callback_(data) {
-    this.value += data.toString();
-  }
-}
-
-//-----------------------------------
-// EXECUTE
-
-function execute(cmd, args) {
-  let childProcess = CHILD_PROCESS.spawn(cmd, args);
-  let errors = new SavedData(childProcess.stderr);
-  let outputs = new SavedData(childProcess.stdout);
-
-  return new Promise(resolve => {
-    childProcess.on('close', exitCode => {
-      resolve({
-        stderr: errors.value,
-        stdout: outputs.value,
-        exitCode: exitCode
-      });
-    });
-  });
 }
 
 //----------------------------------------
