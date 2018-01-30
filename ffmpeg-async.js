@@ -12,7 +12,6 @@ function fatalFail(error) {
 
 //------------------------------------
 // TIME
-
 class Time {
   static error(string) {
     if (string === undefined)
