@@ -5,6 +5,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 // FORMATS
 
 /**
+ * List all formats.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AllFormats() {
@@ -60,6 +61,7 @@ function AllFormats() {
 }
 
 /**
+ * List all formats that can be used as input.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function InputFormats() {
@@ -71,6 +73,7 @@ function InputFormats() {
 }
 
 /**
+ * List all formats that can be used as output.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function OutputFormats() {
