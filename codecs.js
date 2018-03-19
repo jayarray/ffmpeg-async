@@ -242,14 +242,6 @@ function LosslessCompression() {
   });
 }
 
-//---------------------
-
-AllCodecs().then(o => {
-  console.log(`OUTPUT: ${JSON.stringify(o)}`);
-}).catch(error => {
-  `ERROR: ${error}`
-});
-
 //---------------------------------------------
 // EXPORTS
 
