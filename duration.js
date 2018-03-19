@@ -1,4 +1,4 @@
-let FFPROBE = require('ffprobe-async.js');
+let FFPROBE = require('ffprobe-async');
 
 //----------------------------------------
 // DURATION

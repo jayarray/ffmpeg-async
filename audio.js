@@ -1,7 +1,7 @@
-let LINUX = require('linux-commands-async.js');
+let LINUX = require('linux-commands-async');
 let LOCAL_COMMAND = LINUX.Command.LOCAL;
 
-let FFPROBE = require('ffprobe-async.js');
+let FFPROBE = require('ffprobe-async');
 let CODECS = require('./codecs.js');
 
 let path = require('path');

@@ -1,4 +1,4 @@
-let LINUX = require('linux-commands-async.js');
+let LINUX = require('linux-commands-async');
 let LOCAL_COMMAND = LINUX.Command.LOCAL;
 
 //----------------------------------------
@@ -241,6 +241,14 @@ function LosslessCompression() {
     }).catch(error => `Failed to get lossless compression codecs: ${error}`);
   });
 }
+
+//---------------------
+
+AllCodecs().then(o => {
+  console.log(`OUTPUT: ${JSON.stringify(o)}`);
+}).catch(error => {
+  `ERROR: ${error}`
+});
 
 //---------------------------------------------
 // EXPORTS

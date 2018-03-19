@@ -1,5 +1,5 @@
 
-let LINUX = require('linux-commands-async.js');
+let LINUX = require('linux-commands-async');
 let LOCAL_COMMAND = LINUX.Command.LOCAL;
 
 //---------------------------------------
