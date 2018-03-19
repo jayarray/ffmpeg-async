@@ -5,6 +5,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 // CODECS
 
 /**
+ * List all codecs and other respective properties.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AllCodecs() {
@@ -72,6 +73,7 @@ function AllCodecs() {
 }
 
 /**
+ * List all codecs used for decoding.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function DecodingCodecs() {
@@ -90,6 +92,7 @@ function DecodingCodecs() {
 }
 
 /**
+ * List all codecs used for encoding.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function EncodingCodecs() {
@@ -108,6 +111,7 @@ function EncodingCodecs() {
 }
 
 /**
+ * List all codecs that can do both encoding and decoding.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function EncodingDecodingCodecs() {
@@ -125,6 +129,7 @@ function EncodingDecodingCodecs() {
 }
 
 /**
+ * List all audio codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AudioCodecs() {
@@ -143,6 +148,7 @@ function AudioCodecs() {
 }
 
 /**
+ * List all video codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function VideoCodecs() {
@@ -161,6 +167,7 @@ function VideoCodecs() {
 }
 
 /**
+ * List all subtitle codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function SubtitleCodecs() {
@@ -179,6 +186,7 @@ function SubtitleCodecs() {
 }
 
 /**
+ * List all intraframe-only codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function IntraFrameOnlyCodecs() {
@@ -197,6 +205,7 @@ function IntraFrameOnlyCodecs() {
 }
 
 /**
+ * List all lossy compression codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function LossyCompressionCodecs() {
@@ -215,6 +224,7 @@ function LossyCompressionCodecs() {
 }
 
 /**
+ * List all lossy compression codecs.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function LosslessCompression() {
