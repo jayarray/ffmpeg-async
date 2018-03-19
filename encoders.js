@@ -5,6 +5,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 // ENCODERS
 
 /**
+ * List all encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AllEncoders() {
@@ -73,6 +74,7 @@ function AllEncoders() {
 }
 
 /**
+ * List all video encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function VideoEncoders() {
@@ -91,6 +93,7 @@ function VideoEncoders() {
 }
 
 /**
+ * List all audio encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AuidoEncoders() {
@@ -109,6 +112,7 @@ function AuidoEncoders() {
 }
 
 /**
+ * List all subtitle encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function SubtitleEncoders() {
@@ -127,6 +131,7 @@ function SubtitleEncoders() {
 }
 
 /**
+ * List all frame-level multithreading encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function FrameLevelMultithreadingEncoders() {
@@ -145,6 +150,7 @@ function FrameLevelMultithreadingEncoders() {
 }
 
 /**
+ * List all slice-level multithreading encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function SliceLevelMultithreadingEncoders() {
@@ -163,6 +169,7 @@ function SliceLevelMultithreadingEncoders() {
 }
 
 /**
+ * List all experimental encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function ExperimentalEncoders() {
@@ -181,6 +188,7 @@ function ExperimentalEncoders() {
 }
 
 /**
+ * List all draw horiz band encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function DrawHorizBandEncoders() {
@@ -199,6 +207,7 @@ function DrawHorizBandEncoders() {
 }
 
 /**
+ * List all direct rendering method 1 encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function DirectRenderingMethod1() {
