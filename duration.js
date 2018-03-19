@@ -4,6 +4,7 @@ let FFPROBE = require('ffprobe-async.js');
 // DURATION
 
 /**
+ * Get duration of source (in seconds).
  * @returns {Promise<number>} Returns a promise. If it resolves, it returns a number. Otherwise, it returns an error.
  */
 function InSeconds(src) {
@@ -15,6 +16,7 @@ function InSeconds(src) {
 }
 
 /**
+ * Get duration of source (as string)
  * @returns {Promise<string>} Returns a promise. If it resolves, it returns a string. Otherwise, it returns an error.
  */
 function AsString(src) {
@@ -26,6 +28,7 @@ function AsString(src) {
 }
 
 /**
+ * Get duration of source as an object with properties (i.e. hours. minutes, seconds).
  * @returns {Promise<{hours: number, minutes: number, seconds: number}>} Returns a promise. If it resolves, it returns an object. Otherwise, it returns an error.
  */
 function Units(src) {
