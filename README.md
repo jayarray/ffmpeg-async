@@ -7,4 +7,4 @@ npm install ffmpeg-async
 ```
 
 # Documentation
-[API Documentation](https://docs.google.com/document/d/18E9159nGsHGwA5PCwqTIH_NkRet2EpYizJu2J3vrC9E/edit?usp=sharing)
+[API Documentation](https://docs.google.com/document/d/1G0HsgppQGqPiquCtB3ZhqR898Z8UHFoU5W3MaebMZOQ/edit?usp=sharing)
