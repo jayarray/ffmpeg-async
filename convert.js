@@ -22,6 +22,7 @@ function SrcDestValidator(src) {
 // CONVERT
 
 /**
+ * Convert a file from one format to another.
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function Convert(src, dest) {
