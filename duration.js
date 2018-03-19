@@ -6,7 +6,7 @@ let FFPROBE = require('ffprobe-async.js');
 /**
  * @returns {Promise<number>} Returns a promise. If it resolves, it returns a number. Otherwise, it returns an error.
  */
-function DurationInSeconds(src) {
+function InSeconds(src) {
   return new Promise((resolve, reject) => {
     FFPROBE.DurationInSeconds(src).then(seconds => {
       resolve(seconds);
@@ -17,7 +17,7 @@ function DurationInSeconds(src) {
 /**
  * @returns {Promise<string>} Returns a promise. If it resolves, it returns a string. Otherwise, it returns an error.
  */
-function DurationString(src) {
+function AsString(src) {
   return new Promise((resolve, reject) => {
     FFPROBE.DurationString(src).then(string => {
       resolve(string);
@@ -28,7 +28,7 @@ function DurationString(src) {
 /**
  * @returns {Promise<{hours: number, minutes: number, seconds: number}>} Returns a promise. If it resolves, it returns an object. Otherwise, it returns an error.
  */
-function DurationUnits(src) {
+function Units(src) {
   return new Promise((resolve, reject) => {
     FFPROBE.DurationTimeUnits(src).then(units => {
       resolve(units);
@@ -39,6 +39,6 @@ function DurationUnits(src) {
 //---------------------------------------
 // EXPORTS
 
-exports.DurationInSeconds = DurationInSeconds;
-exports.DurationString = DurationString;
-exports.DurationUnits = DurationUnits;
+exports.InSeconds = InSeconds;
+exports.AsString = AsString;
+exports.Units = Units;
