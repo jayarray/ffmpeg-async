@@ -1,7 +1,7 @@
 {
   "name": "ffmpeg-async",
   "version": "1.0.0",
-  "description": "A collection of ffmpeg commands",
+  "description": "An API for ffmpeg commands",
   "main": "ffmpeg-async.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,7 +9,7 @@
   "author": "Jesus Isaias Arevalo",
   "license": "ISC",
   "dependencies": {
-    "ffprobe-async": "^1.0.1",
-    "filesystem-async": "^1.0.5"
+    "ffprobe-async": "^1.0.4",
+    "linux-commands-async": "^1.0.0"
   }
 }
