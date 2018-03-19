@@ -211,7 +211,7 @@ function DrawHorizBandDecoders() {
  * List all direct rendering method 1 decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
-function DirectRenderingMethod1() {
+function DirectRenderingMethod1Decoders() {
   return new Promise((resolve, reject) => {
     AllDecoders().then(decoders => {
       let ret = [];
@@ -237,4 +237,4 @@ exports.FrameLevelMultithreadingDecoders = FrameLevelMultithreadingDecoders;
 exports.SliceLevelMultithreadingDecoders = SliceLevelMultithreadingDecoders;
 exports.ExperimentalDecoders = ExperimentalDecoders;
 exports.DrawHorizBandDecoders = DrawHorizBandDecoders;
-exports.DirectRenderingMethod1 = DirectRenderingMethod1;
+exports.DirectRenderingMethod1Decoders = DirectRenderingMethod1Decoders;
