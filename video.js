@@ -112,6 +112,7 @@ function TimeStringValidator(string) {
 // VIDEO
 
 /**
+ * List all supported video formats.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function SupportedFormats() {
@@ -123,6 +124,7 @@ function SupportedFormats() {
 }
 
 /**
+ * Calculate the number of frames in a video.
  * @param {string} src Source
  * @param {number} fps Frames per second
  * @returns {Promise<number>} Returns a promise. If it resolves, it returns a number. Otherwise, it returns an error.
@@ -143,6 +145,7 @@ function EstimatedFrames(src, fps) {
 }
 
 /**
+ * Trim a video given a start and end time.
  * @param {string} src Source
  * @param {string} start Start time string
  * @param {string} end End time string
@@ -162,8 +165,7 @@ function Trim(src, start, end, dest) {
   if (error)
     return Promise.reject(`Failed to trim video: start time is ${error}`);
 
-  let startTrimmed = start.trim();
-  error = TimeStringValidator(startTrimmed);
+  error = TimeStringValidator(src);
   if (!error.isValid)
     return Promise.reject(`Failed to trim video: ${error}`);
 
@@ -189,6 +191,7 @@ function Trim(src, start, end, dest) {
 }
 
 /**
+ * Concatenate video files in the order listed as is (without re-encoding).
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -215,6 +218,7 @@ function Concat(sources, dest) { // videos only! no re-encoding
 }
 
 /**
+ * Concatenate video files without any audio.
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -247,7 +251,7 @@ function ConcatNoAudio(sources, dest) {  // will re-encode
     // Concat & map string
     filterStr += ` concat=n=${sources.length}:v=1 [v]'`;
     args.push(filterStr);
-    args.push('-map', "'[v]'", dest.trim());
+    args.push('-map', "'[v]'", dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
@@ -260,6 +264,7 @@ function ConcatNoAudio(sources, dest) {  // will re-encode
 }
 
 /**
+ * Concatenate video files in the order listed (with re-encoding enabled).
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -295,7 +300,7 @@ function ConcatReencode(sources, dest) {
     // Concat & map string
     filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]'`;
     args.push(filterStr);
-    args.push('-map', "'[v]'", '-map', "'[a]'", dest.trim());
+    args.push('-map', "'[v]'", '-map', "'[a]'", dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
@@ -308,6 +313,7 @@ function ConcatReencode(sources, dest) {
 }
 
 /**
+ * Concatenate video files in the order listed (demuxer).
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -330,7 +336,7 @@ function ConcatDemuxer(sources, dest) {
 
     LINUX.File.create(tempFilepath, lines.join('\n')).then(results => {
       // Build & run command
-      let args = ['-f', 'concat', '-i', tempFilepath, '-c', 'copy', destTrimmed];
+      let args = ['-f', 'concat', '-i', tempFilepath, '-c', 'copy', dest];
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
         if (output.stderr) {
           reject(`Failed to concatenate video sources: ${output.stderr}`);
@@ -346,6 +352,7 @@ function ConcatDemuxer(sources, dest) {
 }
 
 /**
+ * Add audio to video.
  * @param {string} videoSrc Video source
  * @param {string} audioSrc Audio source
  * @param {string} dest Destination
@@ -379,6 +386,7 @@ function AddAudio(videoSrc, audioSrc, dest) {
 }
 
 /**
+ * Replace current audio source with another.
  * @param {string} videoSrc Video source
  * @param {string} audioSrc Audio source
  * @param {string} dest Destination
@@ -410,6 +418,7 @@ function ReplaceAudio(videoSrc, audioSrc, dest) {
 }
 
 /**
+ * Create a video.
  * @param {number} fps Frames per second
  * @param {string} imgSeqFormatStr Image sequence format string (Example: name_1001.png => name_%04d.png)
  * @param {Array<string>} audioPaths List of audio sources
@@ -470,6 +479,7 @@ function Create(fps, imgSeqFormatStr, audioPaths, dest) {
 }
 
 /**
+ * Extract audio from video.
  * @param {string} src Source
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -479,6 +489,7 @@ function ExtractAudio(src, dest) {
 }
 
 /**
+ * Extract video without audio.
  * @param {string} src Source
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -505,6 +516,7 @@ function ExtractVideo(src, dest) {
 }
 
 /**
+ * Extract image sequence from video.
  * @param {string} src Source
  * @param {string} destformatStr Destination format string (Example: name_1001.png => name_%04d.png)
  * @param {number} frameStartNumber Frame number starts here.
@@ -535,6 +547,7 @@ function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
 }
 
 /**
+ * Change video speed.
  * @param {string} src Source
  * @param {number} speed Speed
  * @param {boolean} avoidDroppingFrames Assign as true if you wish to avoid dropping frames (smoother look).
@@ -575,6 +588,7 @@ function ChangeSpeed(src, speed, avoidDroppingFrames, dest) {
 }
 
 /**
+ * Smoothe out slow/fast video (using "motion interpolation" or "optical flow").
  * @param {string} src Source
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
