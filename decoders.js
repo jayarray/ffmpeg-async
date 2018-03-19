@@ -5,6 +5,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 // DECODERS
 
 /**
+ * List all decoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AllDecoders() {
@@ -74,6 +75,7 @@ function AllDecoders() {
 }
 
 /**
+ * List all video decoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function VideoDecoders() {
@@ -92,6 +94,7 @@ function VideoDecoders() {
 }
 
 /**
+ * List all audio decoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function AudioDecoders() {
@@ -110,6 +113,7 @@ function AudioDecoders() {
 }
 
 /**
+ * List all subtitle decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function SubtitleDecoders() {
@@ -128,6 +132,7 @@ function SubtitleDecoders() {
 }
 
 /**
+ * List all frame-level multithreading decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function FrameLevelMultithreadingDecoders() {
@@ -146,6 +151,7 @@ function FrameLevelMultithreadingDecoders() {
 }
 
 /**
+ * List all slice-level multithreading decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function SliceLevelMultithreadingDecoders() {
@@ -164,6 +170,7 @@ function SliceLevelMultithreadingDecoders() {
 }
 
 /**
+ * List all experimental decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function ExperimentalDecoders() {
@@ -182,6 +189,7 @@ function ExperimentalDecoders() {
 }
 
 /**
+ * List all draw horiz band decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function DrawHorizBandDecoders() {
@@ -200,6 +208,7 @@ function DrawHorizBandDecoders() {
 }
 
 /**
+ * List all direct rendering method 1 decoders.
 * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
 */
 function DirectRenderingMethod1() {
