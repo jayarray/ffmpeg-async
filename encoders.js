@@ -210,7 +210,7 @@ function DrawHorizBandEncoders() {
  * List all direct rendering method 1 encoders.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
-function DirectRenderingMethod1() {
+function DirectRenderingMethod1Encoders() {
   return new Promise((resolve, reject) => {
     AllEncoders().then(encoders => {
       let ret = [];
@@ -236,4 +236,4 @@ exports.FrameLevelMultithreadingEncoders = FrameLevelMultithreadingEncoders;
 exports.SliceLevelMultithreadingEncoders = SliceLevelMultithreadingEncoders;
 exports.ExperimentalEncoders = ExperimentalEncoders;
 exports.DrawHorizBandEncoders = DrawHorizBandEncoders;
-exports.DirectRenderingMethod1 = DirectRenderingMethod1;
+exports.DirectRenderingMethod1Encoders = DirectRenderingMethod1Encoders;
