@@ -197,7 +197,7 @@ function Concat(sources, dest) {  // audio files only
         resolve();
 
         // clean up temp file
-        LINUX.File.Remove(tempFilepath).then(success => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
+        LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(success => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
       }).catch(error => `Failed to concatenate audio sources: ${error}`);
     }).catch(error => `Failed to concatenate audio sources: ${error}`);
   });
@@ -244,7 +244,7 @@ function Overlay(sources, dest) {
         resolve();
 
         // clean up temp file
-        LINUX.File.Remove(tempFilepath).then(values => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
+        LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
       }).catch(error => `Failed to concatenate audio sources: ${error}`);
     }).catch(error => `Failed to concatenate audio sources: ${error}`);
   });
