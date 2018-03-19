@@ -110,6 +110,7 @@ function TimeStringValidator(string) {
 // AUDIO
 
 /**
+ * List all supported audio formats.
  * @returns {Promise<Array<{name: string, string: string, types: Array<{char: string, string: string}>}>>} Returns a promise. If it resolves, it returns an array of objects. Otherwise, it returns an error.
  */
 function SupportedFormats() {
@@ -121,6 +122,7 @@ function SupportedFormats() {
 }
 
 /**
+ * Trim an audio file given a start and end time.
  * @param {string} src Source
  * @param {string} start Start time string
  * @param {string} end End time string
@@ -173,6 +175,7 @@ function Trim(src, start, end, dest) {
 }
 
 /**
+ * Concatenate audio files in the order listed.
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -218,6 +221,7 @@ function Concat(sources, dest) {  // audio files only
 }
 
 /**
+ * Overlay audio files. (All audio overlaps)
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
@@ -257,6 +261,7 @@ function Overlay(sources, dest) {
 }
 
 /**
+ * Change audio speed.
  * @param {string} src Source
  * @param {number} speed Speed (between 0.5 and 2.0)
  * @param {string} dest Destination
