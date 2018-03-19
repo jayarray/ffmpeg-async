@@ -24,6 +24,28 @@ function StringValidator(string) {
     return null;
 }
 
+function SourcesValidator(sources) {
+  if (sources === undefined)
+    return 'sources is undefined';
+
+  if (sources == null)
+    return 'sources is null';
+
+  if (Array.isArray(sources)) {
+    let allAreStrings = true;
+    for (let i = 0; i < sources.length; ++i) {
+      if (typeof sources[i] != 'string') {
+        allAreStrings = false; break;
+      }
+    }
+
+    if (!allAreStrings)
+      return 'sources contains a non-string element'
+  }
+
+  return null;
+}
+
 function TimeStringValidator(string) {
   let error = StringValidator(string);
   if (error) {
@@ -172,19 +194,11 @@ function Trim(src, start, end, dest) {
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function Concat(sources, dest) { // videos only! no re-encoding
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to concatenate video sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate video sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
 
@@ -206,19 +220,11 @@ function Concat(sources, dest) { // videos only! no re-encoding
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ConcatNoAudio(sources, dest) {  // will re-encode
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to concatenate video sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate video sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
 
@@ -259,19 +265,11 @@ function ConcatNoAudio(sources, dest) {  // will re-encode
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ConcatReencode(sources, dest) {
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to concatenate video sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate video sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
 
@@ -315,46 +313,33 @@ function ConcatReencode(sources, dest) {
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ConcatDemuxer(sources, dest) {
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to concatenate video sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate video sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    // Create file with all video paths
-    Source.list_errors(sources).then(errors => {
+    let currDir = LINUX.Path.ParentDir(dest);
+    let tempFilepath = path.join(currDir, 'video_input_list.txt');
 
+    let lines = [];
+    sources.forEach(s => lines.push(`file '${s}'`));
 
-      let currDir = LINUX.Path.ParentDir(dest);
-      let tempFilepath = path.join(currDir, 'video_input_list.txt');
+    LINUX.File.create(tempFilepath, lines.join('\n')).then(results => {
+      // Build & run command
+      let args = ['-f', 'concat', '-i', tempFilepath, '-c', 'copy', destTrimmed];
+      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+        if (output.stderr) {
+          reject(`Failed to concatenate video sources: ${output.stderr}`);
+          return;
+        }
+        resolve();
 
-      let lines = [];
-      sources.forEach(s => lines.push(`file '${s}'`));
-
-      LINUX.File.create(tempFilepath, lines.join('\n')).then(results => {
-        // Build & run command
-        let args = ['-f', 'concat', '-i', tempFilepath, '-c', 'copy', destTrimmed];
-        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-          if (output.stderr) {
-            reject(`Failed to concatenate video sources: ${output.stderr}`);
-            return;
-          }
-          resolve();
-
-          // clean up temp file
-          FILESYSTEM.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate video sources: ${error}`);
-        }).catch(error => `Failed to concatenate video sources: ${error}`);
+        // clean up temp file
+        FILESYSTEM.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate video sources: ${error}`);
       }).catch(error => `Failed to concatenate video sources: ${error}`);
     }).catch(error => `Failed to concatenate video sources: ${error}`);
   });
@@ -372,11 +357,11 @@ function AddAudio(videoSrc, audioSrc, dest) {
     if (error)
       return Promise.reject(`Failed to add audio: video source is ${error}`);
 
-    error = Source.error(audioSrc);
+    error = StringValidator(audioSrc);
     if (error)
       return Promise.reject(`Failed to add audio: audio source is ${error}`);
 
-    error = FILESYSTEM.Path.error(dest);
+    error = StringValidator(dest);
     if (error)
       return Promise.reject(`Failed to add audio: destination is ${error}`);
 
@@ -404,17 +389,17 @@ function ReplaceAudio(videoSrc, audioSrc, dest) {
   if (error)
     return Promise.reject(`Failed to add audio: video source is ${error}`);
 
-  error = Source.error(audioSrc);
+  error = StringValidator(audioSrc);
   if (error)
     return Promise.reject(`Failed to add audio: audio source is ${error}`);
 
-  error = FILESYSTEM.Path.error(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to add audio: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
     let args = ['-i', videoSrc, '-i', audioSrc, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', dest];
-    LOCAL_COMMAND.Execute.local('ffmpeg', args).then(output => {
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
         reject(`Failed to replace audio: ${output.stderr}`);
         return;
@@ -431,19 +416,11 @@ function ReplaceAudio(videoSrc, audioSrc, dest) {
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function Create(fps, imgSeqFormatStr, audioPaths, dest) {
-  if (Array.isArray(audioPaths)) {
-    let allAreStrings = true;
-    for (let i = 0; i < audioPaths.length; ++i) {
-      if (typeof audioPaths[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(audioPaths);
+  if (error)
+    return Promise.reject(`Failed to create video: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate video sources: audio paths must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to create video: destination is ${error}`);
 
@@ -470,7 +447,7 @@ function Create(fps, imgSeqFormatStr, audioPaths, dest) {
 
       LINUX.File.Create(tempFilepath, lines.join('\n')).then(success => {
         let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264', '-r', fps, '-shortest', '-y', dest];
-        FILESYSTEM.Execute.local('ffmpeg', args).then(output => {
+        FILESYSTEM.Execute('ffmpeg', args).then(output => {
           if (output.stderr) {
             reject(error => `Failed to create video: ${error}`);
             return;
@@ -480,7 +457,7 @@ function Create(fps, imgSeqFormatStr, audioPaths, dest) {
       }).catch(error => `Failed to create video: ${error}`);
     }
     else {
-      let args = ['-r', fps, '-i', imgSeqFormatStr, '-vcodec', 'libx264', '-r', fps, '-y', destTrimmed];
+      let args = ['-r', fps, '-i', imgSeqFormatStr, '-vcodec', 'libx264', '-r', fps, '-y', dest];
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
         if (output.stderr) {
           reject(`Failed to create video: ${output.stderr}`);
@@ -517,7 +494,7 @@ function ExtractVideo(src, dest) {
 
   return new Promise((resolve, reject) => {
     let args = ['-i', src, '-c', 'copy', '-an', dest];
-    LOCAL_COMMAND.Execute.local('ffmpeg', args).then(output => {
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
         reject(`Failed to extract video: ${output.stderr}`);
         return;
@@ -586,7 +563,7 @@ function ChangeSpeed(src, speed, avoidDroppingFrames, dest) {
       args.push('-r', speedInverse);
     args.push('-filter:v' `"setpts=${speed}*PTS"`, dest);
 
-    LOCAL_COMMAND.Execute.local('ffmpeg', args).then(output => {
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
         reject(`Failed to change speed: ${output.stderr}`);
         return;
