@@ -120,7 +120,7 @@ function Trim(src, start, end, dest) {
 
   let startTrimmed = start.trim();
   error = TimeStringValidator(startTrimmed);
-  if (error)
+  if (!error.isValid)
     return Promise.reject(`Failed to trim audio: ${error}`);
 
   error = TimeStringError(end);
@@ -129,7 +129,7 @@ function Trim(src, start, end, dest) {
 
   let endTrimmed = end.trim();
   error = TimeStringValidator(endTrimmed);
-  if (error)
+  if (!error.isValid)
     return Promise.reject(`Failed to trim audio: ${error}`);
 
   return new Promise((resolve, reject) => {
