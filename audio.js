@@ -7,7 +7,7 @@ let CODECS = require('./codecs.js');
 let path = require('path');
 
 //------------------------------------
-// TIME STRING ERROR
+// ERROR CHECKS
 
 function StringValidator(string) {
   if (string === undefined)
@@ -20,6 +20,28 @@ function StringValidator(string) {
     return 'Time string is whitespace';
   else
     return null;
+}
+
+function SourcesValidator(sources) {
+  if (sources === undefined)
+    return 'sources is undefined';
+
+  if (sources == null)
+    return 'sources is null';
+
+  if (Array.isArray(sources)) {
+    let allAreStrings = true;
+    for (let i = 0; i < sources.length; ++i) {
+      if (typeof sources[i] != 'string') {
+        allAreStrings = false; break;
+      }
+    }
+
+    if (!allAreStrings)
+      return 'sources contains a non-string element'
+  }
+
+  return null;
 }
 
 function TimeStringValidator(string) {
@@ -156,19 +178,11 @@ function Trim(src, start, end, dest) {
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function Concat(sources, dest) {  // audio files only
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to concatenate audio sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate audio sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate audio sources: destination is ${error}`);
 
@@ -209,19 +223,11 @@ function Concat(sources, dest) {  // audio files only
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function Overlay(sources, dest) {
-  if (Array.isArray(sources)) {
-    let allAreStrings = true;
-    for (let i = 0; i < sources.length; ++i) {
-      if (typeof sources[i] != 'string') {
-        allAreStrings = false; break;
-      }
-    }
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to overlay audio sources: ${error}`);
 
-    if (!allAreStrings)
-      return Promise.reject(`Failed to concatenate audio sources: sources must all be strings`);
-  }
-
-  let error = StringValidator(dest);
+  error = StringValidator(dest);
   if (error)
     return Promise.reject(`Failed to concatenate audio sources: destination is ${error}`);
 
