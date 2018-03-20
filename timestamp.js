@@ -140,7 +140,7 @@ function TimestampValidator(string) {
 
         let containsMantissa = secondsStr.includes('.');
         if (containsMantissa) {
-          let moreParts = seconds.split('.');
+          let moreParts = secondsStr.split('.');
           seconds = moreParts[0];
           nanoseconds = moreParts[1];
         }
