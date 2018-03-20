@@ -3,6 +3,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 
 let DURATION = require('./duration.js');
 let CODECS = require('./codecs.js');
+let TIMESTAMP = require('./timestamp.js');
 
 let CONVERT = require('./convert.js');
 
@@ -44,68 +45,6 @@ function SourcesValidator(sources) {
   }
 
   return null;
-}
-
-function TimeStringValidator(string) {
-  let error = StringValidator(string);
-  if (error) {
-    return { isValid: false, error: error };
-  }
-
-  let sTrimmed = string.trim();
-  let parts = sTrimmed.split(':');
-
-  if (parts.length == 3) {
-    let hours = parts[0].trim();
-
-    // Check hours
-    let hoursIsValid = null;
-    if (hours.length == 1 && Number.isInteger(hours))
-      hoursIsValid = true;
-    else if (hours.length > 1 && hours.charAt(0) != '0' && Number.isInteger(hours.substring(1))) // HOURS does not need leading zeros
-      hoursIsValid = true;
-    else
-      hoursIsValid = false;
-
-
-    if (hoursIsValid) {
-      let minutes = parts[1].trim();
-
-      // Check minutes
-      if (minutes.length == 2 && Number.isInteger(minutes) && Number.isInteger(hours.charAt(0)) && Number.isInteger(hours.charAt(1))) {
-        let secondsStr = parts[2].trim();
-
-        // Check seconds
-        let containsMantissa = secondsStr.includes('.');
-
-        let seconds = null;
-        if (containsMantissa)
-          seconds = seconds.split('.')[0];
-        else
-          seconds = secondsStr;
-
-        if (seconds.length == 2 && Number.isInteger(seconds.charAt(0)) && Number.isInteger(seconds.charAt(1))) {
-          if (containsMantissa) {
-            let mantissa = seconds.split('.')[1];
-
-            if (mantissa.length == 6) {
-              let areAllInts = true;
-              for (let i = 0; i < mantissa.length; ++i) {
-                if (!Number.isInteger(mantissa.charAt(i)))
-                  areallInts = false;
-                break;
-              }
-
-              if (areAllInts)
-                return { isValid: true, error: null };
-            }
-          }
-          return { isValid: true, error: null };
-        }
-      }
-    }
-    return { isValid: false, error: 'Time string is not formatted correctly. Must follow one of two formats: H:MM:SS or H:MM:SS.xxxxxx' };
-  }
 }
 
 //----------------------------------------
@@ -150,9 +89,10 @@ function EstimatedFrames(src, fps) {
  * @param {string} start Start time string
  * @param {string} end End time string
  * @param {string} dest Destination
+ * @param {boolean} enableReencode Set to true if re-encoding is desired. False otherwise.
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function Trim(src, start, end, dest) {
+function Trim(src, start, end, dest, enableReencode) {
   let error = StringValidator(src);
   if (error)
     return Promise.reject(`Failed to trim video: source is ${error}`);
@@ -161,27 +101,42 @@ function Trim(src, start, end, dest) {
   if (error)
     return Promise.reject(`Failed to trim video: destination is ${error}`);
 
-  error = TimeStringError(start);
+  error = TIMESTAMP.TimestampValidator(start);
   if (error)
-    return Promise.reject(`Failed to trim video: start time is ${error}`);
+    return Promise.reject(`Failed to trim video: start time error: ${error}`);
 
-  error = TimeStringValidator(src);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim video: ${error}`);
-
-  error = TimeStringError(end);
+  let startTrimmed = start.trim();
+  error = TIMESTAMP.TimestampValidator(startTrimmed);
   if (error)
-    return Promise.reject(`Failed to trim video: end time is ${error}`);
+    return Promise.reject(`Failed to trim video: start time error: ${error}`);
+
+  error = TIMESTAMP.TimestampValidator(end);
+  if (error)
+    return Promise.reject(`Failed to trim video: end time error: ${error}`);
 
   let endTrimmed = end.trim();
-  error = TimeStringValidator(endTrimmed);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim video: ${error}`);
+  error = TIMESTAMP.TimestampValidator(endTrimmed);
+  if (error)
+    return Promise.reject(`Failed to trim video: end time error: ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-ss', startTrimmed, '-i', src, '-to', endTrimmed, '-c', 'copy', dest];
+    let startTimestamp = new TIMESTAMP.Timestamp(startTrimmed);
+    let endTimestamp = new TIMESTAMP.Timestamp(endTrimmed);
+    let durationTimestamp = TIMESTAMP.Difference(startTimestamp, endTimestamp);
+
+    let args = ['-ss', startTimestamp.string(), '-i', src, '-t', durationTimestamp.string()];
+    if (!enableReencode)
+      args.push('-c', 'copy');
+    args.push(dest);
+
+    console.log(`CMD: ffmpeg ${args.join(' ')}`); // DEBUG
+
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = output.stderr.indexOf('No such file or directory') != -1 ||
+        output.stderr.indexOf('Unrecognized') != -1 ||
+        output.stderr.indexOf('Error splitting the argument list') != -1;
+
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to trim video: ${output.stderr}`);
         return;
       }
@@ -345,7 +300,7 @@ function ConcatDemuxer(sources, dest) {
         resolve();
 
         // clean up temp file
-        FILESYSTEM.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate video sources: ${error}`);
+        LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate video sources: ${error}`);
       }).catch(error => `Failed to concatenate video sources: ${error}`);
     }).catch(error => `Failed to concatenate video sources: ${error}`);
   });
@@ -456,7 +411,7 @@ function Create(fps, imgSeqFormatStr, audioPaths, dest) {
 
       LINUX.File.Create(tempFilepath, lines.join('\n')).then(success => {
         let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264', '-r', fps, '-shortest', '-y', dest];
-        FILESYSTEM.Execute('ffmpeg', args).then(output => {
+        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
           if (output.stderr) {
             reject(error => `Failed to create video: ${error}`);
             return;
@@ -613,6 +568,21 @@ function SmoothOut(src, dest) {
     }).catch(error => `Failed to smooth out video: ${error}`);
   });
 }
+
+//------------------------------
+
+let src = '/home/isa/Desktop/YouTube/google-mini/dev/pencil_sketch_video.flv';
+let dest = '/home/isa/Desktop/YouTube/google-mini/dev/TRIMMED.MOV';
+
+let start = '00:00:10';
+let end = '00:00:15';
+let enableReencode = true;
+
+Trim(src, start, end, dest, enableReencode).then(o => {
+  console.log(`SUCCESS :-)`)
+}).catch(error => {
+  console.log(`ERROR: ${error}`);
+});
 
 //---------------------------------------
 // EXPORTS
