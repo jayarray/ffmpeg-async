@@ -104,6 +104,11 @@ function StringValidator(string) {
     return null;
 }
 
+/**
+ * Validates a timestamp string.
+ * @param {string} string Timestamp string
+ * @returns {string} Returns an error string if timestamp is not valid. Otherwise, it returns null if no errors are found.
+ */
 function TimestampValidator(string) {
   let error = StringValidator(string);
   if (error)
