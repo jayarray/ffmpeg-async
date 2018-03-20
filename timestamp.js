@@ -8,6 +8,7 @@ const MIN_SECONDS = 0;
 const MAX_SECONDS = 59;
 const MIN_NANOSECONDS = 0;
 const MAX_NANOSECONDS = 999999;
+const NANOSECONDS_PER_SECOND = 1000000000;
 
 
 function HoursToString(hours) {
@@ -199,12 +200,52 @@ class Timestamp {
     return (this.hours_ * 3600) + (this.minutes_ * 60) + this.seconds_;
   }
 
+  toNanoseconds() {
+    return (this.toSeconds() * NANOSECONDS_PER_SECOND) + this.nanoseconds_;
+  }
+
   string() {
     let str = `${this.hoursStr_}:${this.minutesStr_}:${this.secondsStr_}`;
     if (this.nanoseconds_ > 0)
-      str += `${this.nanosecondsStr_}`;
+      str += `.${this.nanosecondsStr_}`;
     return str;
   }
+}
+
+function Difference(t1, t2) {
+  // Convert to nanoseconds
+  let t1Nanoseconds = t1.toNanoseconds();
+  let t2Nanoseconds = t2.toNanoseconds();
+  let diff = t1Nanoseconds - t2Nanoseconds;
+
+  // Convert to hours
+  let nanosPerHour = 3600 * NANOSECONDS_PER_SECOND;
+  let hours = Math.floor(diff / nanosPerHour);
+  let hoursStr = HoursToString(hours);
+  let remainder = diff % nanosPerHour;
+
+  // Convert to minutes
+  let nanosPerMinute = 60 * NANOSECONDS_PER_SECOND;
+  let minutes = Math.floor(remainder / nanosPerMinute);
+  let minutesStr = MinutesToString(minutes);
+  remainder = remainder % nanosPerMinute;
+
+  // Convert to seconds
+  let seconds = Math.floor(diff / NANOSECONDS_PER_SECOND);
+  let secondsStr = SecondsToString(seconds);
+  remainder = remainder % NANOSECONDS_PER_SECOND;
+
+  // Convert to nanoseconds
+  let nanoseconds = remainder;
+  let nanosecondsStr = NanosecondsToString(nanoseconds);
+
+
+  // Return timestamp object
+  let timestampStr = `${hoursStr}:${minutesStr}:${secondsStr}`;
+  if (nanoseconds > 0)
+    timestampStr += `.${nanosecondsStr}`;
+
+  return new Timestamp(timestampStr);
 }
 
 //--------------------------------------
@@ -212,3 +253,4 @@ class Timestamp {
 
 exports.TimestampValidator = TimestampValidator;
 exports.Timestamp = Timestamp;
+exports.Difference = Difference;
