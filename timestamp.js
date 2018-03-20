@@ -13,8 +13,9 @@ const NANOSECONDS_PER_SECOND = 1000000000;
 
 function HoursToString(hours) {
   let hStr = hours.toString();
-  let startIndex = -hStr.length;
-  return `0${hours}`.substring(startIndex);
+  if (hours < 10)
+    return `0${hours}`;
+  return hours.toString();
 }
 
 function HoursValidator(hoursStr) {
@@ -28,7 +29,9 @@ function HoursValidator(hoursStr) {
 }
 
 function MinutesToString(minutes) {
-  return `0${minutes}`.substring(-2);
+  if (minutes < 10)
+    return `0${minutes}`;
+  return minutes.toString();
 }
 
 function MinutesValidator(minutesStr) {
@@ -47,7 +50,9 @@ function MinutesValidator(minutesStr) {
 }
 
 function SecondsToString(seconds) {
-  return `0${seconds}`.substring(-2);
+  if (seconds < 10)
+    return `0${seconds}`;
+  return seconds.toString();
 }
 
 function SecondsValidator(secondsStr) {
@@ -71,8 +76,6 @@ function NanosecondsToString(nanoseconds) {
   let formattedStr = null;
   if (nStr.length < 6)
     return `000000${nanoseconds}`.split(-6);
-  else if (nStr.length > 6)
-    return nanoseconds.toString().substring(0, 6);
   else
     return nanoseconds.toString();
 }
@@ -216,7 +219,12 @@ function Difference(t1, t2) {
   // Convert to nanoseconds
   let t1Nanoseconds = t1.toNanoseconds();
   let t2Nanoseconds = t2.toNanoseconds();
-  let diff = t1Nanoseconds - t2Nanoseconds;
+
+  let diff = 0;
+  if (t1Nanoseconds > t2Nanoseconds)
+    diff = t1Nanoseconds - t2Nanoseconds;
+  else
+    diff = t2Nanoseconds - t1Nanoseconds;
 
   // Convert to hours
   let nanosPerHour = 3600 * NANOSECONDS_PER_SECOND;
