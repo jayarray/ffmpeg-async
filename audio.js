@@ -58,9 +58,7 @@ function TimeStringValidator(string) {
 
     // Check hours
     let hoursIsValid = null;
-    if (hours.length == 1 && Number.isInteger(hours))
-      hoursIsValid = true;
-    else if (hours.length > 1 && hours.charAt(0) != '0' && Number.isInteger(hours.substring(1))) // HOURS does not need leading zeros
+    if (!isNaN(hours))
       hoursIsValid = true;
     else
       hoursIsValid = false;
@@ -70,7 +68,7 @@ function TimeStringValidator(string) {
       let minutes = parts[1].trim();
 
       // Check minutes
-      if (minutes.length == 2 && Number.isInteger(minutes) && Number.isInteger(hours.charAt(0)) && Number.isInteger(hours.charAt(1))) {
+      if (minutes.length == 2 && !isNaN(minutes)) {
         let secondsStr = parts[2].trim();
 
         // Check seconds
@@ -82,7 +80,7 @@ function TimeStringValidator(string) {
         else
           seconds = secondsStr;
 
-        if (seconds.length == 2 && Number.isInteger(seconds.charAt(0)) && Number.isInteger(seconds.charAt(1))) {
+        if (seconds.length == 2 && !isNaN(seconds)) {
           if (containsMantissa) {
             let mantissa = seconds.split('.')[1];
 
@@ -138,8 +136,8 @@ function Trim(src, start, end, dest) {
   if (error)
     return Promise.reject(`Failed to trim audio: destination is ${error}`);
 
-  error = TimeStringError(start);
-  if (error)
+  error = TimeStringValidator(start);
+  if (!error.isValid)
     return Promise.reject(`Failed to trim audio: start time is ${error}`);
 
   let startTrimmed = start.trim();
@@ -147,8 +145,8 @@ function Trim(src, start, end, dest) {
   if (!error.isValid)
     return Promise.reject(`Failed to trim audio: ${error}`);
 
-  error = TimeStringError(end);
-  if (error)
+  error = TimeStringValidator(end);
+  if (!error.isValid)
     return Promise.reject(`Failed to trim audio: end time is ${error}`);
 
   let endTrimmed = end.trim();
@@ -160,7 +158,7 @@ function Trim(src, start, end, dest) {
     FFPROBE.CodecTypes(src).then(types => {
       if (types.length == 1 && types.includes('audio')) {
         let args = ['-i', src, '-ss', startTrimmed, '-to', endTrimmed, '-c', 'copy', dest];
-        FILESYSTEM.Execute.local('ffmpeg', args).then(output => {
+        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
           if (output.stderr) {
             reject(`Failed to trim audio: ${output.stderr}`);
             return;
