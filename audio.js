@@ -3,6 +3,7 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 
 let FFPROBE = require('ffprobe-async');
 let CODECS = require('./codecs.js');
+let TIMESTAMP = require('./timestamp.js');
 
 let path = require('path');
 
@@ -44,66 +45,6 @@ function SourcesValidator(sources) {
   return null;
 }
 
-function TimeStringValidator(string) {
-  let error = StringValidator(string);
-  if (error) {
-    return { isValid: false, error: error };
-  }
-
-  let sTrimmed = string.trim();
-  let parts = sTrimmed.split(':');
-
-  if (parts.length == 3) {
-    let hours = parts[0].trim();
-
-    // Check hours
-    let hoursIsValid = null;
-    if (!isNaN(hours))
-      hoursIsValid = true;
-    else
-      hoursIsValid = false;
-
-
-    if (hoursIsValid) {
-      let minutes = parts[1].trim();
-
-      // Check minutes
-      if (minutes.length == 2 && !isNaN(minutes)) {
-        let secondsStr = parts[2].trim();
-
-        // Check seconds
-        let containsMantissa = secondsStr.includes('.');
-
-        let seconds = null;
-        if (containsMantissa)
-          seconds = seconds.split('.')[0];
-        else
-          seconds = secondsStr;
-
-        if (seconds.length == 2 && !isNaN(seconds)) {
-          if (containsMantissa) {
-            let mantissa = seconds.split('.')[1];
-
-            if (mantissa.length == 6) {
-              let areAllInts = true;
-              for (let i = 0; i < mantissa.length; ++i) {
-                if (!Number.isInteger(mantissa.charAt(i)))
-                  areallInts = false;
-                break;
-              }
-
-              if (areAllInts)
-                return { isValid: true, error: null };
-            }
-          }
-          return { isValid: true, error: null };
-        }
-      }
-    }
-    return { isValid: false, error: 'Time string is not formatted correctly. Must follow one of two formats: H:MM:SS or H:MM:SS.xxxxxx' };
-  }
-}
-
 //----------------------------------------
 // AUDIO
 
@@ -136,23 +77,23 @@ function Trim(src, start, end, dest) {
   if (error)
     return Promise.reject(`Failed to trim audio: destination is ${error}`);
 
-  error = TimeStringValidator(start);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim audio: start time is ${error}`);
+  error = TIMESTAMP.TimestampValidator(start);
+  if (error)
+    return Promise.reject(`Failed to trim audio: start time error: ${error}`);
 
   let startTrimmed = start.trim();
-  error = TimeStringValidator(startTrimmed);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim audio: ${error}`);
+  error = TIMESTAMP.TimestampValidator(startTrimmed);
+  if (error)
+    return Promise.reject(`Failed to trim audio: start time error: ${error}`);
 
-  error = TimeStringValidator(end);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim audio: end time is ${error}`);
+  error = TIMESTAMP.TimestampValidator(end);
+  if (error)
+    return Promise.reject(`Failed to trim audio: end error: ${error}`);
 
   let endTrimmed = end.trim();
-  error = TimeStringValidator(endTrimmed);
-  if (!error.isValid)
-    return Promise.reject(`Failed to trim audio: ${error}`);
+  error = TIMESTAMP.TimestampValidator(endTrimmed);
+  if (error)
+    return Promise.reject(`Failed to trim audio: end time error: ${error}`);
 
   return new Promise((resolve, reject) => {
     FFPROBE.CodecTypes(src).then(types => {
