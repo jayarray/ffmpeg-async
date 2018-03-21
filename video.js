@@ -300,7 +300,7 @@ function AddAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function ReplaceAudio(videoSrc, audioSrc, dest) {
+function ReplaceAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
   let error = StringValidator(videoSrc);
   if (error)
     return Promise.reject(`Failed to add audio: video source is ${error}`);
@@ -314,9 +314,14 @@ function ReplaceAudio(videoSrc, audioSrc, dest) {
     return Promise.reject(`Failed to add audio: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', videoSrc, '-i', audioSrc, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', dest];
+    let args = ['-i', videoSrc, '-i', audioSrc, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0'];
+    if (truncateAtShortestTime)
+      args.push('-shortest');
+    args.push(dest);
+
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to replace audio: ${output.stderr}`);
         return;
       }
@@ -530,9 +535,12 @@ let src3 = '/home/isa/Desktop/YouTube/google-mini/dev/mini-is-this-correct.MOV';
 let sources = [src1, src2, src3];
 
 let audioSrc = '/home/isa/Desktop/YouTube/google-mini/dev/audio.mp3';
+let replace = '/home/isa/Desktop/YouTube/google-mini/dev/second-audio.mp3';
 let dest = '/home/isa/Desktop/YouTube/google-mini/dev/X_CONCAT.flv';
 
-AddAudio(dest, audioSrc, '/home/isa/Desktop/YouTube/google-mini/dev/X_ADDED_AUDIO.flv', false).then(console.log(`SUCCESS :-)`)).catch(error => {
+let thisSrc = '/home/isa/Desktop/YouTube/google-mini/dev/X_ADDED_AUDIO.flv';
+
+ReplaceAudio(thisSrc, replace, '/home/isa/Desktop/YouTube/google-mini/dev/X_REPLACED_AUDIO.flv', true).then(console.log(`SUCCESS :-)`)).catch(error => {
   console.log(`ERROR: ${error}`);
 });
 
