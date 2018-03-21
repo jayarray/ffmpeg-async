@@ -47,6 +47,14 @@ function SourcesValidator(sources) {
   return null;
 }
 
+function ContainsErrorKeyword(error) {
+  return error.indexOf('No such file or directory') != -1 ||
+    error.indexOf('Unrecognized') != -1 ||
+    error.indexOf('Error splitting the argument list') != -1 ||
+    error.indexOf('Invalid argument') != -1 ||
+    error.indexOf('Error ') != -1;
+}
+
 //----------------------------------------
 // VIDEO
 
@@ -132,9 +140,7 @@ function Trim(src, start, end, dest, enableReencode) {
     console.log(`CMD: ffmpeg ${args.join(' ')}`); // DEBUG
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      let containsErrorKeyword = output.stderr.indexOf('No such file or directory') != -1 ||
-        output.stderr.indexOf('Unrecognized') != -1 ||
-        output.stderr.indexOf('Error splitting the argument list') != -1;
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
 
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to trim video: ${output.stderr}`);
@@ -146,85 +152,12 @@ function Trim(src, start, end, dest, enableReencode) {
 }
 
 /**
- * Concatenate video files in the order listed as is (without re-encoding).
+ * Concatenate video files in the order listed (with re-encoding enabled to allow any types to be joined).
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function Concat(sources, dest) { // videos only! no re-encoding
-  let error = SourcesValidator(sources);
-  if (error)
-    return Promise.reject(`Failed to concatenate video sources: ${error}`);
-
-  error = StringValidator(dest);
-  if (error)
-    return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
-
-  return new Promise((resolve, reject) => {
-    let args = ['-i', `'concat:${sources.join('|')}'`, '-codec', 'copy', dest];
-    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
-        reject(`Failed to concatenate video sources: ${output.stderr}`);
-        return;
-      }
-      resolve();
-    }).catch(`Failed to concatenate video sources: ${error}`);
-  });
-}
-
-/**
- * Concatenate video files without any audio.
- * @param {Array<string>} sources List of sources
- * @param {string} dest Destination
- * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
- */
-function ConcatNoAudio(sources, dest) {  // will re-encode
-  let error = SourcesValidator(sources);
-  if (error)
-    return Promise.reject(`Failed to concatenate video sources: ${error}`);
-
-  error = StringValidator(dest);
-  if (error)
-    return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
-
-  return new Promise((resolve, reject) => {
-    let args = [];
-
-    // Source args
-    srcsTrimmed.forEach(src => args.push('-i', src));
-
-    // Filter args (audio/ video stream args)
-    args.push('-filter_complex');
-
-    let filterStr = "'";
-    for (let i = 0; i < sources.length; ++i) {
-      if (i > 0)
-        filterStr += ' ';
-      filterStr += `[${i}:v:0]`;
-    }
-
-    // Concat & map string
-    filterStr += ` concat=n=${sources.length}:v=1 [v]'`;
-    args.push(filterStr);
-    args.push('-map', "'[v]'", dest);
-
-    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
-        reject(`Failed to concat video sources: ${output.stderr}`);
-        return;
-      }
-      resolve();
-    }).catch(error => `Failed to concat video sources: ${error}`);
-  });
-}
-
-/**
- * Concatenate video files in the order listed (with re-encoding enabled).
- * @param {Array<string>} sources List of sources
- * @param {string} dest Destination
- * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
- */
-function ConcatReencode(sources, dest) {
+function Concat(sources, dest) {
   let error = SourcesValidator(sources);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: ${error}`);
@@ -242,23 +175,26 @@ function ConcatReencode(sources, dest) {
     // Filter args (audio/ video stream args)
     args.push('-filter_complex');
 
-    let filterStr = "'";
-    for (let i = 0; i < sources.length; ++i) {
-      if (i > 0)
-        filterStr += ' ';
+    let filterStr = '';
 
-      let audioFilter = `[${i}:a:0]`;
+    let avFilterLines = [];
+    for (let i = 0; i < sources.length; ++i) {
       let videoFilter = `[${i}:v:0]`;
-      filterStr += `${audioFilter} ${videoFilter}`;
+      let audioFilter = `[${i}:a:0]`;
+      avFilterLines.push(`${videoFilter} ${audioFilter}`);
     }
+    filterStr += avFilterLines.join(' ');
 
     // Concat & map string
-    filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]'`;
+    filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]`;
     args.push(filterStr);
-    args.push('-map', "'[v]'", '-map', "'[a]'", dest);
+    args.push('-map', '[v]', '-map', '[a]', dest);
+
+    console.log(`CMD: ffmpeg ${args.join(' ')}`);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to concatenate video sources: ${output.stderr}`);
         return;
       }
@@ -268,12 +204,12 @@ function ConcatReencode(sources, dest) {
 }
 
 /**
- * Concatenate video files in the order listed (demuxer).
+ * Concatenate video files without any audio (with re-encoding enabled to allow any types to be joined).
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function ConcatDemuxer(sources, dest) {
+function ConcatNoAudio(sources, dest) {
   let error = SourcesValidator(sources);
   if (error)
     return Promise.reject(`Failed to concatenate video sources: ${error}`);
@@ -283,26 +219,36 @@ function ConcatDemuxer(sources, dest) {
     return Promise.reject(`Failed to concatenate video sources: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let currDir = LINUX.Path.ParentDir(dest);
-    let tempFilepath = path.join(currDir, 'video_input_list.txt');
+    let args = [];
 
-    let lines = [];
-    sources.forEach(s => lines.push(`file '${s}'`));
+    // Source args
+    sources.forEach(src => args.push('-i', src));
 
-    LINUX.File.create(tempFilepath, lines.join('\n')).then(results => {
-      // Build & run command
-      let args = ['-f', 'concat', '-i', tempFilepath, '-c', 'copy', dest];
-      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
-          reject(`Failed to concatenate video sources: ${output.stderr}`);
-          return;
-        }
-        resolve();
+    // Filter args (audio/ video stream args)
+    args.push('-filter_complex');
 
-        // clean up temp file
-        LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate video sources: ${error}`);
-      }).catch(error => `Failed to concatenate video sources: ${error}`);
-    }).catch(error => `Failed to concatenate video sources: ${error}`);
+    let filterStr = '';
+
+    let aFilterLines = [];
+    sources.forEach((src, i) => aFilterLines.push(`[${i}:v:0]`))
+
+    filterStr += aFilterLines.join(' ');
+
+    // Concat & map string
+    filterStr += ` concat=n=${sources.length}:v=1 [v]`;
+    args.push(filterStr);
+    args.push('-map', '[v]', dest);
+
+    console.log(`CMD: ffmpeg ${args.join(' ')}`);
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to concatenate video sources: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to concat video sources: ${error}`);
   });
 }
 
@@ -313,7 +259,7 @@ function ConcatDemuxer(sources, dest) {
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function AddAudio(videoSrc, audioSrc, dest) {
+function AddAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
   return new Promise((resolve, reject) => {
     let error = StringValidator(videoSrc);
     if (error)
@@ -328,9 +274,16 @@ function AddAudio(videoSrc, audioSrc, dest) {
       return Promise.reject(`Failed to add audio: destination is ${error}`);
 
     return new Promise((resolve, reject) => {
-      let args = ['-i', videoSrc, '-i', audioSrc, '-codec', 'copy', '-shortest', dest];
+      let args = ['-i', videoSrc, '-i', audioSrc, '-codec', 'copy'];
+      if (truncateAtShortestTime)
+        args.push('-shortest');
+      args.push(dest);
+
+      console.log(`CMD: ffmpeg ${args.join(' ')}`);
+
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
+        let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
           reject(`Failed to add audio: ${output.stderr}`);
           return;
         }
@@ -571,16 +524,15 @@ function SmoothOut(src, dest) {
 
 //------------------------------
 
-let src = '/home/isa/Desktop/YouTube/google-mini/dev/pencil_sketch_video.flv';
-let dest = '/home/isa/Desktop/YouTube/google-mini/dev/TRIMMED.MOV';
+let src1 = '/home/isa/Desktop/YouTube/google-mini/dev/pencil_sketch_video.flv';
+let src2 = '/home/isa/Desktop/YouTube/google-mini/dev/isa-dancing.flv';
+let src3 = '/home/isa/Desktop/YouTube/google-mini/dev/mini-is-this-correct.MOV';
+let sources = [src1, src2, src3];
 
-let start = '00:00:10';
-let end = '00:00:15';
-let enableReencode = true;
+let audioSrc = '/home/isa/Desktop/YouTube/google-mini/dev/audio.mp3';
+let dest = '/home/isa/Desktop/YouTube/google-mini/dev/X_CONCAT.flv';
 
-Trim(src, start, end, dest, enableReencode).then(o => {
-  console.log(`SUCCESS :-)`)
-}).catch(error => {
+AddAudio(dest, audioSrc, '/home/isa/Desktop/YouTube/google-mini/dev/X_ADDED_AUDIO.flv', false).then(console.log(`SUCCESS :-)`)).catch(error => {
   console.log(`ERROR: ${error}`);
 });
 
@@ -592,8 +544,6 @@ exports.EstimatedFrames = EstimatedFrames;
 exports.Trim = Trim;
 exports.Concat = Concat;
 exports.ConcatNoAudio = ConcatNoAudio;
-exports.ConcatReencode = ConcatReencode;
-exports.ConcatDemuxer = ConcatDemuxer;
 exports.AddAudio = AddAudio;
 exports.ReplaceAudio = ReplaceAudio;
 exports.Create = Create;
