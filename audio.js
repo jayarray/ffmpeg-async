@@ -202,7 +202,7 @@ function Overlay(sources, dest) {
 /**
  * Change audio speed.
  * @param {string} src Source
- * @param {number} speed Speed (between 0.5 and 2.0)
+ * @param {number} speed Speed.
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
