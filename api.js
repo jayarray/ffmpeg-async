@@ -5,4 +5,5 @@ exports.Decoders = require('./decoders.js');
 exports.Duration = require('./duration.js');
 exports.Encoders = require('./encoders.js');
 exports.Formats = require('./formats.js');
+exports.Manual = require('./manual.js');
 exports.Video = require('./video.js');
