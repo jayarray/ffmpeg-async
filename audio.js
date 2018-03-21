@@ -10,6 +10,17 @@ let path = require('path');
 //------------------------------------
 // ERROR CHECKS
 
+function NumberValidator(number) {
+  if (number === undefined)
+    return 'Number is undefined';
+  else if (number == null)
+    return 'Number is null';
+  else if (typeof number != 'number')
+    return 'not a number';
+  else
+    return null;
+}
+
 function StringValidator(string) {
   if (string === undefined)
     return 'Time string is undefined';
@@ -202,11 +213,11 @@ function Overlay(sources, dest) {
 /**
  * Change audio speed.
  * @param {string} src Source
- * @param {number} speed Speed.
+ * @param {number} speed Speed. Values between 0.5 and 1.0 (non-inclusive) will slow it down. Values between 1.0 (non-inclusive) and 2.0 (inclusive) will speed it up. Assign as 1 to leave as is.
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function ChangeSpeed(src, speed, dest) {  // 0.5 (slower) < speed < 2.0 (faster)
+function ChangeSpeed(src, speed, dest) {
   return new Promise((resolve, reject) => {
     let error = StringValidator(src);
     if (error)
@@ -216,8 +227,9 @@ function ChangeSpeed(src, speed, dest) {  // 0.5 (slower) < speed < 2.0 (faster)
     if (error)
       return Promise.reject(`Failed to change speed: destination is ${error}`);
 
-    if (isNaN(speed))
-      return Promise.reject(`Failed to change speed: speed is not a number`);
+    error = NumberValidator(speed);
+    if (error)
+      return Promise.reject(`Failed to change speed: speed is ${error}`);
 
     let boundSpeed = 0;
     if (speed < 0.5)
@@ -227,7 +239,7 @@ function ChangeSpeed(src, speed, dest) {  // 0.5 (slower) < speed < 2.0 (faster)
     else
       boundSpeed = speed;
 
-    let args = ['-i', src, '-filter:a', `"atempo=${boundSpeed}"`, '-vn', dest];
+    let args = ['-i', src, '-filter:a', `atempo=${boundSpeed}`, '-vn', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
         reject(`Failed to change speed: ${output.stderr}`);
