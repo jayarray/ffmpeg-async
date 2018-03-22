@@ -56,6 +56,14 @@ function SourcesValidator(sources) {
   return null;
 }
 
+function ContainsErrorKeyword(error) {
+  return error.indexOf('No such file or directory') != -1 ||
+    error.indexOf('Unrecognized') != -1 ||
+    error.indexOf('Error splitting the argument list') != -1 ||
+    error.indexOf('Invalid argument') != -1 ||
+    error.indexOf('Error ') != -1;
+}
+
 //----------------------------------------
 // AUDIO
 
@@ -109,9 +117,14 @@ function Trim(src, start, end, dest) {
   return new Promise((resolve, reject) => {
     FFPROBE.CodecTypes(src).then(types => {
       if (types.length == 1 && types.includes('audio')) {
-        let args = ['-i', src, '-ss', startTrimmed, '-to', endTrimmed, '-c', 'copy', dest];
+        let startTimestamp = new TIMESTAMP.Timestamp(startTrimmed);
+        let endTimestamp = new TIMESTAMP.Timestamp(endTrimmed);
+        let durationTimestamp = TIMESTAMP.Difference(startTimestamp, endTimestamp);
+
+        let args = ['-i', src, '-ss', startTimestamp.string(), '-t', durationTimestamp.string(), '-c', 'copy', dest];
         LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-          if (output.stderr) {
+          let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+          if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
             reject(`Failed to trim audio: ${output.stderr}`);
             return;
           }
@@ -128,9 +141,10 @@ function Trim(src, start, end, dest) {
  * Concatenate audio files in the order listed.
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
+ * @param {boolean} enableReencoding Set as true to re-encode output. Otherwise, set to false.
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function Concat(sources, dest) {  // audio files only
+function Concat(sources, dest, enableReencoding) {  // audio files only
   let error = SourcesValidator(sources);
   if (error)
     return Promise.reject(`Failed to concatenate audio sources: ${error}`);
@@ -140,24 +154,25 @@ function Concat(sources, dest) {  // audio files only
     return Promise.reject(`Failed to concatenate audio sources: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    error = StringValidator(dest);
-    if (error) {
-      reject(`Failed to concatenate audio sources: destination is ${error}`);
-      return;
-    }
+    if (enableReencoding) {
+      let args = [];
 
-    // Create file with all video paths
-    let currDir = LINUX.Path.ParentDir(dest);
-    let tempFilepath = path.join(currDir, 'audio_input_list.txt');
+      // Add inputs
+      sources.forEach(src => args.push(`-i`, src));
 
-    let lines = [];
-    sources.forEach(s => lines.push(`file '${s}'`));
+      // Add filter
+      args.push('-filter_complex');
 
-    LINUX.File.Create(tempFilepath, lines.join('\n')).then(results => {
-      // Build & run command
-      let args = ['-f', 'concat', '-safe', 0, '-i', tempFilepath, '-acodec', 'copy', destTrimmed];
+      let filterStr = '';
+      sources.forEach((src, i) => filterStr += `[${i}:a]`);
+      filterStr += `concat=n=${sources.length}:v=0:a=1`;
+      args.push(filterStr);
+
+      args.push(dest);
+
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
+        let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
           reject(`Failed to concatenate audio sources: ${output.stderr}`);
           return;
         }
@@ -166,7 +181,31 @@ function Concat(sources, dest) {  // audio files only
         // clean up temp file
         LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(success => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
       }).catch(error => `Failed to concatenate audio sources: ${error}`);
-    }).catch(error => `Failed to concatenate audio sources: ${error}`);
+    }
+    else {
+      // Create file with all video paths
+      let currDir = LINUX.Path.ParentDir(dest);
+      let tempFilepath = path.join(currDir, 'audio_input_list.txt');
+
+      let lines = [];
+      sources.forEach(s => lines.push(`file '${s}'`));
+
+      LINUX.File.Create(tempFilepath, lines.join('\n'), LOCAL_COMMAND).then(results => {
+        // Build & run command
+        let args = ['-f', 'concat', '-safe', 0, '-i', tempFilepath, '-acodec', 'copy', dest];
+        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+          let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+          if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+            reject(`Failed to concatenate audio sources: ${output.stderr}`);
+            return;
+          }
+          resolve();
+
+          // clean up temp file
+          LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(success => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
+        }).catch(error => `Failed to concatenate audio sources: ${error}`);
+      }).catch(error => `Failed to concatenate audio sources: ${error}`);
+    }
   });
 }
 
@@ -174,9 +213,10 @@ function Concat(sources, dest) {  // audio files only
  * Overlay audio files. (All audio overlaps)
  * @param {Array<string>} sources List of sources
  * @param {string} dest Destination
+ * @param {string} durationType Duration type. Can be one of the following values: 'longest', 'shortest', 'first'.
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
-function Overlay(sources, dest) {
+function Overlay(sources, dest, durationType) {
   let error = SourcesValidator(sources);
   if (error)
     return Promise.reject(`Failed to overlay audio sources: ${error}`);
@@ -185,27 +225,34 @@ function Overlay(sources, dest) {
   if (error)
     return Promise.reject(`Failed to concatenate audio sources: destination is ${error}`);
 
+  error = StringValidator(durationType);
+  if (error)
+    return Promise.reject(`Failed to concatenate audio sources: duration type is ${error}`);
+
   return new Promise((resolve, reject) => {
-    // Create file with all video paths
-    let currDir = LINUX.Path.ParentDir(dest);
-    let tempFilepath = path.join(currDir, 'audio_input_list.txt');
+    let args = [];
 
-    let lines = [];
-    sources.forEach(s => lines.push(`file '${s}'`));
+    // Add inputs
+    sources.forEach(src => args.push('-i', src));
 
-    LINUX.File.Create(tempFilepath, lines.join('\n')).then(results => {
-      // Build & run command
-      let args = ['-f', 'concat', '-safe', 0, '-i', tempFilepath, '-filter_complex', 'amerge', '-ac', 2, '-c:a', 'libmp3lame', '-q:a', 4, destTrimmed];
-      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
-          reject(`Failed to overlay audio sources: ${output.stderr}`);
-          return;
-        }
-        resolve();
+    // Add filter
+    args.push('-filter_complex');
 
-        // clean up temp file
-        LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(values => { }).catch(error => `Failed to concatenate audio sources: ${error}`);
-      }).catch(error => `Failed to concatenate audio sources: ${error}`);
+    let filterStr = '';
+    sources.forEach((src, i) => filterStr += `[${i}:0]`);
+
+    filterStr += ` amix=inputs=${sources.length}:duration=${durationType}`;
+    args.push(filterStr);
+
+    // Add rest of args
+    args.push('-c:a', 'libmp3lame', dest);
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      if (output.stderr) {
+        reject(`Failed to overlay audio sources: ${output.stderr}`);
+        return;
+      }
+      resolve();
     }).catch(error => `Failed to concatenate audio sources: ${error}`);
   });
 }
@@ -249,6 +296,23 @@ function ChangeSpeed(src, speed, dest) {
     }).catch(error => `Failed to change speed: ${error}`);
   });
 }
+
+//--------------------------------------------
+
+let src1 = '/home/isa/Desktop/YouTube/google-mini/dev/audio.mp3';
+let src2 = '/home/isa/Desktop/YouTube/google-mini/dev/second-audio.mp3';
+
+let start = '00:00:00';
+let end = '00:00:03';
+
+let dest = '/home/isa/Desktop/YouTube/google-mini/dev/X_AUDIO.mp3';
+
+Overlay([src1, src2], dest, 'longest').then(
+  console.log(`Success :-)`)
+).catch(error => {
+  console.log(`ERROR: ${error}`);
+});
+
 
 //--------------------------------------------
 // EXPORTS
