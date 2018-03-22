@@ -4,7 +4,6 @@ let LOCAL_COMMAND = LINUX.Command.LOCAL;
 let DURATION = require('./duration.js');
 let CODECS = require('./codecs.js');
 let TIMESTAMP = require('./timestamp.js');
-
 let CONVERT = require('./convert.js');
 
 let path = require('path');
@@ -12,15 +11,26 @@ let path = require('path');
 //------------------------------------
 // TIME STRING ERROR
 
+function NumberValidator(number) {
+  if (number === undefined)
+    return 'Number is undefined';
+  else if (number == null)
+    return 'Number is null';
+  else if (typeof number != 'number')
+    return 'not a number';
+  else
+    return null;
+}
+
 function StringValidator(string) {
   if (string === undefined)
-    return 'Time string is undefined';
+    return 'undefined';
   else if (string == null)
-    return 'Time string is null';
+    return 'null';
   else if (string == '')
-    return 'Time string is empty';
+    return 'empty';
   else if (string.trim() == '')
-    return 'Time string is whitespace';
+    return 'whitespace';
   else
     return null;
 }
@@ -137,8 +147,6 @@ function Trim(src, start, end, dest, enableReencode) {
       args.push('-c', 'copy');
     args.push(dest);
 
-    console.log(`CMD: ffmpeg ${args.join(' ')}`); // DEBUG
-
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
 
@@ -190,8 +198,6 @@ function Concat(sources, dest) {
     args.push(filterStr);
     args.push('-map', '[v]', '-map', '[a]', dest);
 
-    console.log(`CMD: ffmpeg ${args.join(' ')}`);
-
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
@@ -239,8 +245,6 @@ function ConcatNoAudio(sources, dest) {
     args.push(filterStr);
     args.push('-map', '[v]', dest);
 
-    console.log(`CMD: ffmpeg ${args.join(' ')}`);
-
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
@@ -278,8 +282,6 @@ function AddAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
       if (truncateAtShortestTime)
         args.push('-shortest');
       args.push(dest);
-
-      console.log(`CMD: ffmpeg ${args.join(' ')}`);
 
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
         let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -331,67 +333,6 @@ function ReplaceAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
 }
 
 /**
- * Create a video.
- * @param {number} fps Frames per second
- * @param {string} imgSeqFormatStr Image sequence format string (Example: name_1001.png => name_%04d.png)
- * @param {Array<string>} audioPaths List of audio sources
- * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
- */
-function Create(fps, imgSeqFormatStr, audioPaths, dest) {
-  let error = SourcesValidator(audioPaths);
-  if (error)
-    return Promise.reject(`Failed to create video: ${error}`);
-
-  error = StringValidator(dest);
-  if (error)
-    return Promise.reject(`Failed to create video: destination is ${error}`);
-
-  if (isNaN(fps))
-    return Promise.reject(`Failed to create video: fps is not a number`);
-
-  return new Promise((resolve, reject) => {
-    if (audioPaths.length == 1) {
-      let args = ['-r', fps, '-i', imgSeqFormatStr, '-i', audioPaths[0], '-vcodec', 'libx264', -'shortest', '-y', dest];
-      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
-          reject(`Failed to create video: ${output.stderr}`);
-          return;
-        }
-        resolve();
-      }).catch(error => `Failed to create video: ${error}`);
-    }
-    else if (audioPaths.length > 1) {
-      let currDir = LINUX.Path.ParentDir(dest);
-      let tempFilepath = path.join(currDir, 'video_input_list.txt');
-
-      let lines = [];
-      audioPaths.forEach(path => lines.push(`file '${path}'`));
-
-      LINUX.File.Create(tempFilepath, lines.join('\n')).then(success => {
-        let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264', '-r', fps, '-shortest', '-y', dest];
-        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-          if (output.stderr) {
-            reject(error => `Failed to create video: ${error}`);
-            return;
-          }
-          resolve();
-        }).catch(error => `Failed to create video: ${error}`);
-      }).catch(error => `Failed to create video: ${error}`);
-    }
-    else {
-      let args = ['-r', fps, '-i', imgSeqFormatStr, '-vcodec', 'libx264', '-r', fps, '-y', dest];
-      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-        if (output.stderr) {
-          reject(`Failed to create video: ${output.stderr}`);
-          return;
-        }
-        resolve();
-      }).catch(error => `Failed to create video: ${error}`);
-    }
-  });
-}
-
-/**
  * Extract audio from video.
  * @param {string} src Source
  * @param {string} dest Destination
@@ -419,7 +360,8 @@ function ExtractVideo(src, dest) {
   return new Promise((resolve, reject) => {
     let args = ['-i', src, '-c', 'copy', '-an', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to extract video: ${output.stderr}`);
         return;
       }
@@ -433,6 +375,7 @@ function ExtractVideo(src, dest) {
  * @param {string} src Source
  * @param {string} destformatStr Destination format string (Example: name_1001.png => name_%04d.png)
  * @param {number} frameStartNumber Frame number starts here.
+ * @param {number} fps Frames per second.
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
@@ -447,10 +390,11 @@ function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
     let args = ['-i', src];
     if (frameStartNumber)
       args.push('-start_number', frameStartNumber);
-    args.push('-vf', `fps=${fps}`, dest);
+    args.push('-vf', `fps=${fps}`, destFormatStr);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to extract images: ${output.stderr}`);
         return;
       }
@@ -460,10 +404,87 @@ function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
 }
 
 /**
+ * Create a video.
+ * @param {number} fps Frames per second
+ * @param {string} imgSeqFormatStr Image sequence format string (Example: name_1001.png => name_%04d.png)
+ * @param {Array<string>} audioPaths List of audio sources
+ * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
+ */
+function Create(fps, imgSeqFormatStr, audioPaths, dest, truncateAtShortestTime) {
+  let error = SourcesValidator(audioPaths);
+  if (error)
+    return Promise.reject(`Failed to create video: ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to create video: destination is ${error}`);
+
+  if (isNaN(fps))
+    return Promise.reject(`Failed to create video: fps is not a number`);
+
+  return new Promise((resolve, reject) => {
+    if (audioPaths.length == 1) { // ADD SINGLE AUDIO SOURCE
+      let args = ['-r', fps, '-i', imgSeqFormatStr, '-i', audioPaths[0], '-vcodec', 'libx264'];
+      if (truncateAtShortestTime)
+        args.push('-shortest');
+      args.push('-y', dest);
+
+      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+        let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+          reject(`Failed to create video: ${output.stderr}`);
+          return;
+        }
+        resolve();
+      }).catch(error => `Failed to create video: ${error}`);
+    }
+    else if (audioPaths.length > 1) { // ADD MULTIPLE AUDIO SOURCES
+      let currDir = LINUX.Path.ParentDir(dest);
+      let tempFilepath = path.join(currDir, 'video_input_list.txt');
+
+      let lines = [];
+      audioPaths.forEach(path => lines.push(`file '${path}'`));
+
+      LINUX.File.Create(tempFilepath, lines.join('\n'), LOCAL_COMMAND).then(success => {
+        let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264']; //'-r', fps];
+        if (truncateAtShortestTime)
+          args.push('-shortest');
+        args.push('-y', dest);
+
+        LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+          let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+          if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+            reject(`Failed to create video: ${output.stderr}`);
+            return;
+          }
+          resolve();
+
+          // Clean up temp file
+          LINUX.File.Remove(tempFilepath, LOCAL_COMMAND).then(success => {
+            // Do nothing.
+          }).catch(error => `Failed to create video: ${error}`);
+        }).catch(error => `Failed to create video: ${error}`);
+      }).catch(error => `Failed to create video: ${error}`);
+    }
+    else { // NO AUDIO
+      let args = ['-r', fps, '-i', imgSeqFormatStr, '-vcodec', 'libx264', '-y', dest];
+      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+        let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+          reject(`Failed to create video: ${output.stderr}`);
+          return;
+        }
+        resolve();
+      }).catch(error => `Failed to create video: ${error}`);
+    }
+  });
+}
+
+/**
  * Change video speed.
  * @param {string} src Source
- * @param {number} speed Speed
- * @param {boolean} avoidDroppingFrames Assign as true if you wish to avoid dropping frames (smoother look).
+ * @param {number} speed Speed for both audio and video. Values between 0.5 and 1.0 (non-inclusive) will slow both down. Values between 1.0 (non-inclusive) and 2.0 (inclusive) will speed both up. Assign as 1 to leave as is.
+ * @param {boolean} avoidDroppingFrames Assign as true if you wish to avoid dropping frames after changing speed. (Gives a smoother look).
  * @param {string} dest Destination
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
@@ -476,21 +497,24 @@ function ChangeSpeed(src, speed, avoidDroppingFrames, dest) {
   if (error)
     return Promise.reject(`Failed to change speed: destination is ${error}`);
 
-  if (isNaN(speed))
-    return Promise.reject(`Failed to change speed: speed is not a number`);
+  error = NumberValidator(speed);
+  if (error)
+    return Promise.reject(`Failed to change speed: speed is ${error}`);
 
   return new Promise((resolve, reject) => {
-    // SLOW: speed > 1
-    // FAST: 0 < speed <= 1
-    let speedInverse = 1 / speed;
+    let audioSpeed = speed;
+    let videoSpeed = parseFloat((1 / speed).toFixed(2));
+
     let args = ['-i', src];
 
     if (avoidDroppingFrames)
-      args.push('-r', speedInverse);
-    args.push('-filter:v' `"setpts=${speed}*PTS"`, dest);
+      args.push('-r', 120);
+
+    args.push('-filter_complex', `[0:v]setpts=${videoSpeed}*PTS[v];[0:a]atempo=${audioSpeed}[a]`, '-map', '[v]', '-map', '[a]', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to change speed: ${output.stderr}`);
         return;
       }
@@ -516,9 +540,12 @@ function SmoothOut(src, dest) {
     return Promise.reject(`Failed to smooth out video: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', src, '-filter', `"minterpolate='mi_mode=mci:mc_mode=aobmc:vsbmc=1:fps=120'"`, dest];
+    let args = ['-i', src, '-filter:v', 'minterpolate', '-r', 120, dest];
+
+    console.log(`CMD: ffmpeg ${args.join(' ')}`);
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to smooth out video: ${output.stderr}`);
         return;
       }
@@ -526,23 +553,6 @@ function SmoothOut(src, dest) {
     }).catch(error => `Failed to smooth out video: ${error}`);
   });
 }
-
-//------------------------------
-
-let src1 = '/home/isa/Desktop/YouTube/google-mini/dev/pencil_sketch_video.flv';
-let src2 = '/home/isa/Desktop/YouTube/google-mini/dev/isa-dancing.flv';
-let src3 = '/home/isa/Desktop/YouTube/google-mini/dev/mini-is-this-correct.MOV';
-let sources = [src1, src2, src3];
-
-let audioSrc = '/home/isa/Desktop/YouTube/google-mini/dev/audio.mp3';
-let replace = '/home/isa/Desktop/YouTube/google-mini/dev/second-audio.mp3';
-let dest = '/home/isa/Desktop/YouTube/google-mini/dev/X_CONCAT.flv';
-
-let thisSrc = '/home/isa/Desktop/YouTube/google-mini/dev/X_ADDED_AUDIO.flv';
-
-ReplaceAudio(thisSrc, replace, '/home/isa/Desktop/YouTube/google-mini/dev/X_REPLACED_AUDIO.flv', true).then(console.log(`SUCCESS :-)`)).catch(error => {
-  console.log(`ERROR: ${error}`);
-});
 
 //---------------------------------------
 // EXPORTS
