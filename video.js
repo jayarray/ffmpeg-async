@@ -403,7 +403,7 @@ function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
 }
 
 /**
- * Create a video.
+ * Create a video from a sequence of images and any audio sources.
  * @param {number} fps Frames per second
  * @param {string} imgSeqFormatStr Image sequence format string (Example: name_1001.png => name_%04d.png)
  * @param {Array<string>} audioPaths List of audio sources
