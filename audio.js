@@ -278,15 +278,7 @@ function ChangeSpeed(src, speed, dest) {
     if (error)
       return Promise.reject(`Failed to change speed: speed is ${error}`);
 
-    let boundSpeed = 0;
-    if (speed < 0.5)
-      boundSpeed = 0.5;
-    else if (speed > 2.0)
-      boundSpeed = 2.0;
-    else
-      boundSpeed = speed;
-
-    let args = ['-i', src, '-filter:a', `atempo=${boundSpeed}`, '-vn', dest];
+    let args = ['-i', src, '-filter:a', `atempo=${speed}`, '-vn', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       if (output.stderr) {
         reject(`Failed to change speed: ${output.stderr}`);
@@ -296,23 +288,6 @@ function ChangeSpeed(src, speed, dest) {
     }).catch(error => `Failed to change speed: ${error}`);
   });
 }
-
-//--------------------------------------------
-
-let src1 = '/home/isa/Desktop/YouTube/google-mini/dev/audio.mp3';
-let src2 = '/home/isa/Desktop/YouTube/google-mini/dev/second-audio.mp3';
-
-let start = '00:00:00';
-let end = '00:00:03';
-
-let dest = '/home/isa/Desktop/YouTube/google-mini/dev/X_AUDIO.mp3';
-
-Overlay([src1, src2], dest, 'longest').then(
-  console.log(`Success :-)`)
-).catch(error => {
-  console.log(`ERROR: ${error}`);
-});
-
 
 //--------------------------------------------
 // EXPORTS
