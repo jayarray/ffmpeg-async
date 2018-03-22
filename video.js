@@ -149,7 +149,6 @@ function Trim(src, start, end, dest, enableReencode) {
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
-
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
         reject(`Failed to trim video: ${output.stderr}`);
         return;
