@@ -18,6 +18,14 @@ function SrcDestValidator(src) {
     return null;
 }
 
+function ContainsErrorKeyword(error) {
+  return error.indexOf('No such file or directory') != -1 ||
+    error.indexOf('Unrecognized') != -1 ||
+    error.indexOf('Error splitting the argument list') != -1 ||
+    error.indexOf('Invalid argument') != -1 ||
+    error.indexOf('Error ') != -1;
+}
+
 //----------------------------------------
 // CONVERT
 
@@ -37,7 +45,8 @@ function Convert(src, dest) {
   return new Promise((resolve, reject) => {
     let args = ['-i', src, dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) {
         reject(`Failed to convert: ${output.stderr}`);
         return;
       }
