@@ -248,7 +248,8 @@ function Overlay(sources, dest, durationType) {
     args.push('-c:a', 'libmp3lame', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) {
         reject(`Failed to overlay audio sources: ${output.stderr}`);
         return;
       }
@@ -280,7 +281,8 @@ function ChangeSpeed(src, speed, dest) {
 
     let args = ['-i', src, '-filter:a', `atempo=${speed}`, '-vn', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      if (output.stderr) {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) {
         reject(`Failed to change speed: ${output.stderr}`);
         return;
       }
