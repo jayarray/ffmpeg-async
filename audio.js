@@ -282,7 +282,7 @@ function ChangeSpeed(src, speed, dest) {
     let args = ['-i', src, '-filter:a', `atempo=${speed}`, '-vn', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
-        if (output.stderr && containsErrorKeyword) {
+      if (output.stderr && containsErrorKeyword) {
         reject(`Failed to change speed: ${output.stderr}`);
         return;
       }
