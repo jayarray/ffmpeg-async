@@ -520,7 +520,46 @@ function ChangeSpeed(src, speed, avoidDroppingFrames, dest) {
       resolve();
     }).catch(error => `Failed to change speed: ${error}`);
   });
+}
 
+/**
+ * Change video speed.
+ * @param {string} src Source
+ * @param {number} speed Speed for video. Values between 0.0 (non-inclusive) and 1.0 (inclusive) will speed it up. Values between 1.0 (non-inclusive) and higher will slow it down. Assign as 1 to leave as is.
+ * @param {boolean} avoidDroppingFrames Assign as true if you wish to avoid dropping frames after changing speed. (Gives a smoother look).
+ * @param {string} dest Destination
+ * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
+ */
+function ChangeSpeedNoAudio(src, speed, avoidDroppingFrames, dest) {
+  let error = StringValidator(src);
+  if (error)
+    return Promise.reject(`Failed to change speed: source is ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to change speed: destination is ${error}`);
+
+  error = NumberValidator(speed);
+  if (error)
+    return Promise.reject(`Failed to change speed: speed is ${error}`);
+
+  return new Promise((resolve, reject) => {
+    let args = ['-i', src];
+
+    if (avoidDroppingFrames)
+      args.push('-r', 120);
+
+    args.push('-filter:v', `setpts=${speed}*PTS`, dest);
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to change speed: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to change speed: ${error}`);
+  });
 }
 
 /**
@@ -568,4 +607,5 @@ exports.ExtractAudio = ExtractAudio;
 exports.ExtractVideo = ExtractVideo;
 exports.ExtractImages = ExtractImages;
 exports.ChangeSpeed = ChangeSpeed;
+exports.ChangeSpeedNoAudio = ChangeSpeedNoAudio;
 exports.SmoothOut = SmoothOut;
