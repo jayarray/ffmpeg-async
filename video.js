@@ -1,6 +1,6 @@
 let LINUX = require('linux-commands-async');
 let LOCAL_COMMAND = LINUX.Command.LOCAL;
-
+let FFPROBE = require('ffprobe-async');
 let DURATION = require('./duration.js');
 let CODECS = require('./codecs.js');
 let TIMESTAMP = require('./timestamp.js');
@@ -144,7 +144,7 @@ function Trim(src, start, end, dest, enableReencode) {
 
     let args = ['-ss', startTimestamp.string(), '-i', src, '-t', durationTimestamp.string()];
     if (!enableReencode)
-      args.push('-c', 'copy');
+      args.push('-c', 'copy', '-y');
     args.push(dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
@@ -179,32 +179,41 @@ function Concat(sources, dest) {
     // Source args
     sources.forEach(src => args.push('-i', src));
 
-    // Filter args (audio/ video stream args)
-    args.push('-filter_complex');
+    // Add default silent track for videos with no audio
+    args.push('-t', 1, '-f', 'lavfi', '-i', 'anullsrc');
+    let nullSrcIndex = sources.length;
 
-    let filterStr = '';
+    // Check each source for existing audio
+    let codecChecks = sources.map(x => FFPROBE.CodecTypes(x));
 
-    let avFilterLines = [];
-    for (let i = 0; i < sources.length; ++i) {
-      let videoFilter = `[${i}:v:0]`;
-      let audioFilter = `[${i}:a:0]`;
-      avFilterLines.push(`${videoFilter} ${audioFilter}`);
-    }
-    filterStr += avFilterLines.join(' ');
+    Promise.all(codecChecks).then(results => {
+      // Filter args (audio/ video stream args)
+      args.push('-filter_complex');
 
-    // Concat & map string
-    filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]`;
-    args.push(filterStr);
-    args.push('-map', '[v]', '-map', '[a]', dest);
+      let filterStr = '';
 
-    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
-      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
-      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
-        reject(`Failed to concatenate video sources: ${output.stderr}`);
-        return;
+      let avFilterLines = [];
+      for (let i = 0; i < sources.length; ++i) {
+        let videoFilter = `[${i}:v]`   //`[${i}:v:0]`;
+        let audioFilter = results[i].includes('audio') ? `[${i}:a]` : `[${nullSrcIndex}:a]`;
+        avFilterLines.push(`${videoFilter} ${audioFilter}`);
       }
-      resolve();
-    }).catch(error => `Failed to concatenate video sources: ${error}`);
+      filterStr += avFilterLines.join(' ');
+
+      // Concat & map string
+      filterStr += ` concat=n=${sources.length}:v=1:a=1 [v] [a]`;
+      args.push(filterStr);
+      args.push('-map', '[v]', '-map', '[a]', '-y', dest);
+
+      LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+        let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+        if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+          reject(`Failed to concatenate video sources: ${output.stderr}`);
+          return;
+        }
+        resolve();
+      }).catch(error => `Failed to concatenate video sources: ${error}`);
+    }).catch(error => reject(`Failed to concatenate video sources: ${error}`));
   });
 }
 
@@ -242,7 +251,7 @@ function ConcatNoAudio(sources, dest) {
     // Concat & map string
     filterStr += ` concat=n=${sources.length}:v=1 [v]`;
     args.push(filterStr);
-    args.push('-map', '[v]', dest);
+    args.push('-map', '[v]', '-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -280,7 +289,7 @@ function AddAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
       let args = ['-i', videoSrc, '-i', audioSrc, '-codec', 'copy'];
       if (truncateAtShortestTime)
         args.push('-shortest');
-      args.push(dest);
+      args.push('-y', dest);
 
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
         let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -318,7 +327,7 @@ function ReplaceAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
     let args = ['-i', videoSrc, '-i', audioSrc, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0'];
     if (truncateAtShortestTime)
       args.push('-shortest');
-    args.push(dest);
+    args.push('-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -357,7 +366,7 @@ function ExtractVideo(src, dest) {
     return Promise.reject(`Failed to extract video: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', src, '-c', 'copy', '-an', dest];
+    let args = ['-i', src, '-c', 'copy', '-an', '-y', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
@@ -389,7 +398,7 @@ function ExtractImages(src, destFormatStr, frameStartNumber, fps) {
     let args = ['-i', src];
     if (frameStartNumber)
       args.push('-start_number', frameStartNumber);
-    args.push('-vf', `fps=${fps}`, destFormatStr);
+    args.push('-vf', `fps=${fps}`, '-y', destFormatStr);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -445,7 +454,7 @@ function Create(fps, imgSeqFormatStr, audioPaths, dest, truncateAtShortestTime) 
       audioPaths.forEach(path => lines.push(`file '${path}'`));
 
       LINUX.File.Create(tempFilepath, lines.join('\n'), LOCAL_COMMAND).then(success => {
-        let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264']; //'-r', fps];
+        let args = ['-r', fps, '-i', imgSeqFormatStr, '-f', 'concat', '-safe', 0, '-i', tempFilepath, '-vcodec', 'libx264'];
         if (truncateAtShortestTime)
           args.push('-shortest');
         args.push('-y', dest);
@@ -509,7 +518,7 @@ function ChangeSpeed(src, speed, avoidDroppingFrames, dest) {
     if (avoidDroppingFrames)
       args.push('-r', 120);
 
-    args.push('-filter_complex', `[0:v]setpts=${videoSpeed}*PTS[v];[0:a]atempo=${audioSpeed}[a]`, '-map', '[v]', '-map', '[a]', dest);
+    args.push('-filter_complex', `[0:v]setpts=${videoSpeed}*PTS[v];[0:a]atempo=${audioSpeed}[a]`, '-map', '[v]', '-map', '[a]', '-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -549,7 +558,7 @@ function ChangeSpeedNoAudio(src, speed, avoidDroppingFrames, dest) {
     if (avoidDroppingFrames)
       args.push('-r', 120);
 
-    args.push('-filter:v', `setpts=${speed}*PTS`, dest);
+    args.push('-filter:v', `setpts=${speed}*PTS`, '-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -578,7 +587,7 @@ function SmoothOut(src, dest) {
     return Promise.reject(`Failed to smooth out video: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', src, '-filter:v', 'minterpolate', '-r', 120, dest];
+    let args = ['-i', src, '-filter:v', 'minterpolate', '-r', 120, '-y', dest];
 
     console.log(`CMD: ffmpeg ${args.join(' ')}`);
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
