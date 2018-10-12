@@ -144,8 +144,8 @@ function Trim(src, start, end, dest, enableReencode) {
 
     let args = ['-ss', startTimestamp.string(), '-i', src, '-t', durationTimestamp.string()];
     if (!enableReencode)
-      args.push('-c', 'copy', '-y');
-    args.push(dest);
+      args.push('-c', 'copy');
+    args.push('-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);

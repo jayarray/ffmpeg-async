@@ -121,7 +121,7 @@ function Trim(src, start, end, dest) {
         let endTimestamp = new TIMESTAMP.Timestamp(endTrimmed);
         let durationTimestamp = TIMESTAMP.Difference(startTimestamp, endTimestamp);
 
-        let args = ['-i', src, '-ss', startTimestamp.string(), '-t', durationTimestamp.string(), '-c', 'copy', dest];
+        let args = ['-i', src, '-ss', startTimestamp.string(), '-t', durationTimestamp.string(), '-c', 'copy', '-y', dest];
         LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
           let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
           if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
@@ -168,7 +168,7 @@ function Concat(sources, dest, enableReencoding) {  // audio files only
       filterStr += `concat=n=${sources.length}:v=0:a=1`;
       args.push(filterStr);
 
-      args.push(dest);
+      args.push('-y', dest);
 
       LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
         let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -245,7 +245,7 @@ function Overlay(sources, dest, durationType) {
     args.push(filterStr);
 
     // Add rest of args
-    args.push('-c:a', 'libmp3lame', dest);
+    args.push('-c:a', 'libmp3lame', '-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
@@ -279,7 +279,7 @@ function ChangeSpeed(src, speed, dest) {
     if (error)
       return Promise.reject(`Failed to change speed: speed is ${error}`);
 
-    let args = ['-i', src, '-filter:a', `atempo=${speed}`, '-vn', dest];
+    let args = ['-i', src, '-filter:a', `atempo=${speed}`, '-vn', '-y', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) {

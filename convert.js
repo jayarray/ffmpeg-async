@@ -43,7 +43,7 @@ function Convert(src, dest) {
     return Promise.reject(`Failed to convert: Destination is ${destError}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', src, dest];
+    let args = ['-i', src, '-y', dest];
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) {
