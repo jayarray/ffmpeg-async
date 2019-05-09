@@ -87,7 +87,7 @@ function SupportedFormats() {
  * @returns {Promise<number>} Returns a promise. If it resolves, it returns a number. Otherwise, it returns an error.
  */
 function EstimatedFrames(src, fps) {
-  let error = Source.error(src);
+  let error = StringValidator(src);
   if (error)
     return Promise.reject({ count: null, error: `SRC_ERROR: ${error}` });
 
