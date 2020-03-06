@@ -592,7 +592,6 @@ function SmoothOut(src, dest) {
   return new Promise((resolve, reject) => {
     let args = ['-i', src, '-filter:v', 'minterpolate', '-r', 120, '-y', dest];
 
-    console.log(`CMD: ffmpeg ${args.join(' ')}`);
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
       if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
