@@ -558,7 +558,10 @@ function ChangeSpeedNoAudio(src, speed, avoidDroppingFrames, dest) {
     if (avoidDroppingFrames)
       args.push('-r', 120);
 
-    args.push('-filter:v', `setpts=${speed}*PTS`, '-y', dest);
+    let speedString = (1 / speed).toFixed(2);
+    let adjustedSpeed = Number(speedString);
+
+    args.push('-filter:v', `setpts=${adjustedSpeed}*PTS`, '-y', dest);
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
