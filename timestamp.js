@@ -239,7 +239,7 @@ function Difference(t1, t2) {
   remainder = remainder % nanosPerMinute;
 
   // Convert to seconds
-  let seconds = Math.floor(diff / NANOSECONDS_PER_SECOND);
+  let seconds = Math.floor(remainder / NANOSECONDS_PER_SECOND);
   let secondsStr = SecondsToString(seconds);
   remainder = remainder % NANOSECONDS_PER_SECOND;
 
