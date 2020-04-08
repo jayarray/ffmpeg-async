@@ -347,7 +347,26 @@ function ReplaceAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ExtractAudio(src, dest) {
-  return CONVERT.Convert(src, dest);
+  let error = StringValidator(src);
+  if (error)
+    return Promise.reject(`Failed to extract audio: source is ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to extract audio: destination is ${error}`);
+
+  return new Promise((resolve, reject) => {
+    let args = ['-i', src, '-vn', '-acodec', 'libvorbis', '-y', dest];
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to extract audio: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to extract audio: ${error}`);
+  });
 }
 
 /**
