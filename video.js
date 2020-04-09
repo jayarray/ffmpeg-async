@@ -343,7 +343,7 @@ function ReplaceAudio(videoSrc, audioSrc, dest, truncateAtShortestTime) {
 /**
  * Extract audio from video.
  * @param {string} src Source
- * @param {string} dest Destination
+ * @param {string} dest Destination (NOTE: the dest file extension must match the video's audio stream extension or it will fail.)
  * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
  */
 function ExtractAudio(src, dest) {
@@ -356,7 +356,7 @@ function ExtractAudio(src, dest) {
     return Promise.reject(`Failed to extract audio: destination is ${error}`);
 
   return new Promise((resolve, reject) => {
-    let args = ['-i', src, '-vn', '-acodec', 'libvorbis', '-y', dest];
+    let args = ['-i', src, '-vn', '-acodec', 'copy', '-y', dest];
 
     LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
       let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
