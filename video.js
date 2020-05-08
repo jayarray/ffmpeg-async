@@ -622,6 +622,229 @@ function SmoothOut(src, dest) {
   });
 }
 
+
+/**
+ * Display videos in a row (horizontal). (NOTE: All videos must have the same height.)
+ * @param {Array<string>} sources A list of sources.
+ * @param {string} dest Destination
+ * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
+ */
+function HorizontalStack(sources, dest) {
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to stack videos horizontally: sources is ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to stack videos horizontally: destination is ${error}`);
+
+  return new Promise((resolve, reject) => {
+    let args = [];
+
+    sources.forEach(source => {
+      args.push('-i', source);
+    });
+
+    args.push('-filter_complex', `hstack=inputs=${sources.length}`, dest);
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to stack videos horizontally: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to stack videos horizontally: ${error}`);
+  });
+}
+
+
+/**
+ * Display videos in a column (vertical). (NOTE: All videos must have the same width.)
+ * @param {Array<string>} sources A list of sources.
+ * @param {string} dest Destination
+ * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
+ */
+function VerticalStack(sources, dest) {
+  let error = SourcesValidator(sources);
+  if (error)
+    return Promise.reject(`Failed to stack videos vertically: sources is ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to stack videos vertically: destination is ${error}`);
+
+  return new Promise((resolve, reject) => {
+    let args = [];
+
+    sources.forEach(source => {
+      args.push('-i', source);
+    });
+
+    args.push('-filter_complex', `vstack=inputs=${sources.length}`, dest);
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to stack videos vertically: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to stack videos vertically: ${error}`);
+  });
+}
+
+/**
+ * For use with GetLayoutString function.
+ * @param {number} column Column index
+ * @param {number} factor The 
+ * @returns {string} Returns the appropriate mathematical string to represent the width position at this column.
+ */
+function GridWidthString(column, factor) {
+  let str = null;
+
+  if (column == 0)
+    str = 0;
+  else {
+    let args = [];
+
+    for (let i = 0; i < column; ++i)
+      args.push(`w${i * factor}`);
+
+    str = args.join('+');
+  }
+
+  return str;
+}
+
+/**
+ * For use with GetLayoutString function.
+ * @param {number} row Row index
+ * @returns {string} Returns the appropriate mathematical string to represent the height position at this row.
+ */
+function GridHeightString(row) {
+  let str = null;
+
+  if (row == 0)
+    str = '0';
+  else {
+    let args = [];
+
+    for (let i = 0; i < row; i++)
+      args.push(`h${i}`);
+
+    str = args.join('+');
+  }
+
+  return str;
+}
+
+/**
+ * Build the appropriate layout string required by the xstack filter.
+ * @param {number} rows Number of rows
+ * @param {number} columns Number of columns
+ * @returns {string} Returns the layout string representing the xstack filter argument.
+ */
+function GetLayoutString(rows, columns) {
+  // Get factor
+  let factor = columns;
+
+  // Build string
+  let args = [];
+
+  for (let r = 0; r < rows; ++r) {
+    for (let c = 0; c < columns; ++c) {
+      let columnStr = GridWidthString(c, factor);
+      let rowStr = GridHeightString(r);
+      let positionStr = `${columnStr}_${rowStr}`;
+      args.push(positionStr);
+    }
+  }
+
+  let layoutStr = args.join('|');
+  return layoutStr;
+}
+
+/**
+ * Display videos in a grid formation. (NOTE: Videos should all be the same size. If videos are different sizes, gaps or overlaps may occur.)
+ * @param {Array<Array<string>>} sources A list of arrays of sources. Each array represents a column on the grid (i.e. x[0] is first column, x[1] is second column, and so forth.)
+ * @param {string} dest Destination
+ * @returns {Promise} Returns a promise that resolves if successful. Otherwise, it returns an error.
+ */
+function Grid(sources, dest) {
+  if (!Array.isArray(sources))
+    return Promise.reject('Failed to create video grid: sources is not an array.');
+
+  let error = null;
+
+  for (let i = 0; i < sources.length; ++i) {
+    let currArr = sources[i];
+
+    let currErr = SourcesValidator(currArr);
+    if (currErr) {
+      error = `Problem with source array: ${currErr}.`;
+      break;
+    }
+  }
+
+  if (error)
+    return Promise.reject(`Failed to create video grid: ${error}`);
+
+  error = StringValidator(dest);
+  if (error)
+    return Promise.reject(`Failed to create video grid: destination is ${error}`);
+
+  return new Promise((resolve, reject) => {
+
+    // Get number of rows and columns
+    let columns = sources.length;
+    let rows = sources[0].length;
+    let totalInputs = rows * columns;
+
+    // Add source inputs
+
+    let args = [];
+
+    for (let c = 0; c < columns; ++c) {
+      for (let r = 0; r < rows; ++r) {
+        let currSrc = sources[c][r];
+        args.push(`-i`, currSrc);
+      }
+    }
+
+    args.push('-filter_complex');
+
+    // Build filter string
+
+    let filterArgs = [];
+
+    for (let i = 0; i < totalInputs; ++i)
+      filterArgs.push(`[${i}:v]`);
+
+    filterArgs.push('xstack', '=', 'inputs', '=', totalInputs, ':', 'layout', '=');
+
+    let layoutStr = GetLayoutString(rows, columns);
+    filterArgs.push(layoutStr);
+    filterArgs.push('[v]');
+
+    let filterStr = filterArgs.join('');
+    args.push(filterStr);
+
+    // Add remaining args
+    args.push('-map', '[v]', dest);
+
+
+    LOCAL_COMMAND.Execute('ffmpeg', args).then(output => {
+      let containsErrorKeyword = ContainsErrorKeyword(output.stderr);
+      if (output.stderr && containsErrorKeyword) { // FFMPEG sends all its output to stderr.
+        reject(`Failed to stack videos vertically: ${output.stderr}`);
+        return;
+      }
+      resolve();
+    }).catch(error => `Failed to stack videos vertically: ${error}`);
+  });
+}
+
 //---------------------------------------
 // EXPORTS
 
@@ -639,3 +862,6 @@ exports.ExtractImages = ExtractImages;
 exports.ChangeSpeed = ChangeSpeed;
 exports.ChangeSpeedNoAudio = ChangeSpeedNoAudio;
 exports.SmoothOut = SmoothOut;
+exports.HorizontalStack = HorizontalStack;
+exports.VerticalStack = VerticalStack;
+exports.Grid = Grid;
