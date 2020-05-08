@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-async",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "An API for ffmpeg commands",
   "main": "api.js",
   "scripts": {
